@@ -1,0 +1,29 @@
+openapi: 3.0.0
+
+info:
+  title: CareFlow Auth API
+  version: 1.0.0
+
+paths:
+
+  /auth/login:
+    post:
+      summary: User login
+
+      requestBody:
+        required: true
+
+      responses:
+        '200':
+          description: Successful login
+
+        '401':
+          description: Invalid credentials
+
+  /auth/register-clinic:
+    post:
+      summary: Register clinic and clinic admin
+
+      responses:
+        '201':
+          description: Clinic created
