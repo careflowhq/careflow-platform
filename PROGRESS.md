@@ -1,0 +1,220 @@
+# CareFlow Platform — Progress Log
+
+Documento vivo para sincronizar el estado del proyecto entre sesiones (Cursor, ChatGPT, GitHub).
+
+> Actualizar este archivo después de cada implementación relevante.
+
+---
+
+## Última actualización
+
+**Fecha:** 2026-05-19  
+**Sesión:** Propagación de identidad multi-tenant en API Gateway
+
+---
+
+## Estado general
+
+CareFlow es una plataforma SaaS multi-tenant para clínicas de salud. El proyecto ya supera la fase de tutorial: tiene infraestructura real, arquitectura documentada, auth distribuida end-to-end y base multi-tenant.
+
+---
+
+## Infraestructura
+
+| Componente | Estado | Notas |
+|------------|--------|-------|
+| Docker Compose | ✅ | PostgreSQL + RabbitMQ en `infra/docker/` |
+| PostgreSQL | ✅ | Usado por auth-service |
+| RabbitMQ | ✅ | Preparado para notificaciones (fase futura) |
+
+---
+
+## Arquitectura y documentación
+
+| Elemento | Estado | Ubicación |
+|----------|--------|-----------|
+| Monorepo | ✅ | Raíz del workspace |
+| ADRs | ✅ | `docs/adr/` |
+| Spec-driven | ✅ | `docs/api/`, `docs/data-model/` |
+| Multi-tenant model | ✅ | `docs/architecture/multitenancy.md` |
+| Backend roadmap | ✅ | `docs/architecture/backend-roadmap.md` |
+
+### Modelo multi-tenant
+
+- **Tenant = Clinic** (`clinicId`)
+- JWT claims obligatorios: `userId`, `clinicId`, `role`
+- Roles: `PLATFORM_ADMIN`, `CLINIC_ADMIN`, `DOCTOR`, `ASSISTANT`
+- Aislamiento por `clinicId` en capa de aplicación
+
+---
+
+## Backend — Servicios implementados
+
+### API Gateway (puerto 8080)
+
+| Feature | Estado | Detalle |
+|---------|--------|---------|
+| Spring Cloud Gateway WebFlux | ✅ | |
+| Health endpoint | ✅ | `GET /health` |
+| Proxy auth-service | ✅ | `/api/auth/**` → `localhost:8081` |
+| StripPrefix | ✅ | Quita `/api` → reenvía `/auth/**` al auth-service |
+| JWT validation (jjwt 0.12.5) | ✅ | Stateless, Spring Security WebFlux |
+| Rutas públicas | ✅ | `/health/**`, `/api/auth/**` |
+| Propagación identidad | ✅ | Headers `X-User-Id`, `X-Clinic-Id`, `X-Role` |
+
+**Clases clave (gateway):**
+
+- `service/JwtService.java` — valida JWT y extrae claims
+- `security/JwtAuthenticationFilter.java` — filtro Bearer token
+- `security/JwtClaims.java` — record con userId, clinicId, role
+- `security/JwtAuthenticationToken.java` — token autenticado
+- `security/TenantIdentityHeaders.java` — constantes de headers
+- `security/SecurityConfig.java` — config stateless + rutas públicas
+- `filter/TenantIdentityPropagationFilter.java` — inyecta headers downstream
+
+**Config JWT:**
+
+```yaml
+careflow:
+  jwt:
+    secret: careflow-secret-key-careflow-secret-key  # usar env var en prod
+```
+
+### Auth Service (puerto 8081)
+
+| Feature | Estado | Detalle |
+|---------|--------|---------|
+| Register | ✅ | `POST /auth/register` |
+| Login | ✅ | `POST /auth/login` → devuelve JWT |
+| BCrypt | ✅ | Hash de contraseñas |
+| JWT generation (jjwt 0.12.5) | ✅ | Claims: sub=userId, clinicId, role |
+| PostgreSQL / JPA | ✅ | Entidad `User` |
+| Rutas públicas | ✅ | `/auth/**`, `/actuator/**` |
+
+**Pendiente menor:** manejo de email duplicado en register (hoy devuelve 500, debería ser 409 Conflict).
+
+---
+
+## Flujo de autenticación end-to-end
+
+```
+Cliente
+  │  POST /api/auth/login
+  ▼
+API Gateway (8080)
+  │  StripPrefix: /api/auth/login → /auth/login
+  ▼
+Auth Service (8081)
+  │  Valida credenciales, genera JWT
+  ▼
+Cliente recibe token
+
+---
+
+Cliente
+  │  GET /api/... + Authorization: Bearer <JWT>
+  ▼
+API Gateway
+  │  1. JwtAuthenticationFilter valida token
+  │  2. TenantIdentityPropagationFilter inyecta:
+  │     X-User-Id, X-Clinic-Id, X-Role
+  ▼
+Downstream Service (futuro: Patient Service)
+  │  Lee headers de confianza (no valida JWT directamente)
+  ▼
+Respuesta
+```
+
+---
+
+## Issues resueltos en sesiones anteriores
+
+### 403 Forbidden en `/api/auth/**`
+
+**Causa:** Gateway reenviaba `/api/auth/login` sin transformar; auth-service espera `/auth/login`.  
+**Fix:** `StripPrefix=1` en la ruta del gateway.
+
+### Register falla con email existente
+
+**Causa:** Usuario ya registrado directamente contra auth-service (`abel@test.com`).  
+**Comportamiento:** Constraint único en PostgreSQL → 500. Login funciona correctamente.
+
+---
+
+## Próximos pasos (roadmap)
+
+### Inmediato
+
+- [ ] Patient Service MVP
+  - CRUD pacientes
+  - Aislamiento por `clinicId` (header `X-Clinic-Id`)
+  - Endpoints protegidos vía gateway
+  - Asignación doctor-paciente
+
+### Corto plazo
+
+- [ ] Exception handler en auth-service (409 email duplicado, 401 credenciales inválidas)
+- [ ] Externalizar JWT secret vía env var en todos los servicios
+- [ ] Clinic Service
+- [ ] Tests de integración gateway → downstream headers
+
+### Fase 2+
+
+- FollowUp Service
+- Notification Service (RabbitMQ)
+- WhatsApp integration
+- AI risk scoring
+
+---
+
+## Cómo levantar el entorno local
+
+```bash
+# Infra
+cd infra/docker
+docker compose up -d
+
+# Auth Service
+cd backend/auth-service
+mvn spring-boot:run
+
+# API Gateway
+cd backend/api-gateway
+mvn spring-boot:run
+```
+
+### Pruebas manuales sugeridas
+
+```bash
+# Health (público)
+curl http://localhost:8080/health
+
+# Login (público)
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"abel@test.com","password":"123456"}'
+
+# Ruta protegida con token (cuando exista Patient Service)
+curl http://localhost:8080/api/patients \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+## Historial de implementaciones
+
+| Fecha | Implementación | Servicio |
+|-------|----------------|----------|
+| 2026-05-19 | JWT validation stateless en gateway | api-gateway |
+| 2026-05-19 | Fix StripPrefix para rutas auth | api-gateway |
+| 2026-05-19 | Propagación headers X-User-Id, X-Clinic-Id, X-Role | api-gateway |
+
+---
+
+## Notas para ChatGPT / próxima sesión
+
+1. El monorepo completo debe abrirse en Cursor (docs + backend + infra).
+2. Auth distribuida funciona end-to-end: login via gateway devuelve JWT válido.
+3. Gateway ya propaga identidad multi-tenant a servicios downstream.
+4. Siguiente milestone natural: **Patient Service** con aislamiento por clinicId.
+5. Usar siempre prompt con: *"Suggest a professional git commit message"* al final.

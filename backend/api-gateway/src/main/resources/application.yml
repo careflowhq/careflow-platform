@@ -1,17 +1,25 @@
 server:
   port: 8080
 
+careflow:
+  jwt:
+    secret: careflow-secret-key-careflow-secret-key
+
 spring:
   application:
     name: api-gateway
 
   cloud:
     gateway:
-      routes:
-        - id: auth-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/auth/**
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
 
 management:
   endpoints:
