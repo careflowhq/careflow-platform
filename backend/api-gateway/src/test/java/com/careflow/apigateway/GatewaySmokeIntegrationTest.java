@@ -84,6 +84,16 @@ class GatewaySmokeIntegrationTest {
     }
 
     @Test
+    void inviteRouteRequiresJwt() {
+        webTestClient.post()
+                .uri("/api/auth/invite")
+                .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                .bodyValue("{\"fullName\":\"Dr. Ana\",\"email\":\"ana@test.com\",\"role\":\"DOCTOR\"}")
+                .exchange()
+                .expectStatus().isUnauthorized();
+    }
+
+    @Test
     void protectedRoutesForwardWithTenantHeaders() {
         stubFor(get(urlEqualTo("/patients"))
                 .willReturn(aResponse().withStatus(200).withBody("[]")));

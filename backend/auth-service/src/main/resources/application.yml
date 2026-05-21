@@ -33,3 +33,5 @@ careflow:
     url: http://localhost:8083
   internal:
     api-key: ${CAREFLOW_INTERNAL_API_KEY:careflow-internal-dev-key}
+  invite:
+    expiration-days: 7
