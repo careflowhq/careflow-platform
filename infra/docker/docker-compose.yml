@@ -32,6 +32,16 @@ services:
     ports:
       - "5435:5432"
 
+  postgres-followup:
+    image: postgres:16
+    container_name: postgres-followup
+    environment:
+      POSTGRES_DB: followup_db
+      POSTGRES_USER: careflow
+      POSTGRES_PASSWORD: careflow
+    ports:
+      - "5436:5432"
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq

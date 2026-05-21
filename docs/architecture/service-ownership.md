@@ -10,7 +10,7 @@ Who owns what in the CareFlow monorepo.
 | **auth-service** | Identity | 8081 | `auth_db` | `/api/auth/**` | Register, login, JWT, user credentials |
 | **clinic-service** | Tenant | 8083 | `clinic_db` | `/api/clinics/**` | Clinic lifecycle, tenant metadata |
 | **patient-service** | Clinical | 8082 | `patient_db` | `/api/patients/**` | Patient CRUD, clinic-scoped data |
-| **followup-service** | Clinical (planned) | TBD | `followup_db` | `/api/followups/**` | Reminders, inactivity rules |
+| **followup-service** | Clinical | 8084 | `followup_db` | `/api/followups/**` | Follow-up CRUD, overdue scheduler |
 | **notification-service** | Platform (planned) | TBD | TBD | internal/events | WhatsApp, delivery |
 
 ## Code ownership (monorepo)
@@ -48,10 +48,12 @@ flowchart LR
     AUTH[auth-service]
     CLINIC[clinic-service]
     PATIENT[patient-service]
+    FOLLOWUP[followup-service]
 
     GW --> AUTH
     GW --> CLINIC
     GW --> PATIENT
+    GW --> FOLLOWUP
     AUTH -->|register only| CLINIC
 ```
 

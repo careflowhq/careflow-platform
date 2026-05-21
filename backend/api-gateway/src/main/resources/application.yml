@@ -32,6 +32,12 @@ spring:
                 - Path=/api/clinics/**
               filters:
                 - StripPrefix=1
+            - id: followup-service
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/followups/**
+              filters:
+                - StripPrefix=1
 
 management:
   endpoints:

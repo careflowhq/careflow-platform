@@ -35,7 +35,7 @@ CareFlow es una plataforma SaaS multi-tenant para clínicas de salud. El proyect
 | Componente | Estado | Notas |
 |------------|--------|-------|
 | Docker Compose | ✅ | PostgreSQL + RabbitMQ en `infra/docker/` |
-| PostgreSQL | ✅ | `auth_db` (5433), `patient_db` (5434), `clinic_db` (5435) |
+| PostgreSQL | ✅ | `auth_db` (5433), `patient_db` (5434), `clinic_db` (5435), `followup_db` (5436) |
 | RabbitMQ | ✅ | Preparado para notificaciones (fase futura) |
 
 ---
@@ -57,6 +57,10 @@ CRUD clínicas (tenant raíz), ownership por rol, onboarding interno para auth-s
 ### Patient Service (8082)
 
 CRUD pacientes con aislamiento por `clinicId` del header propagado.
+
+### FollowUp Service (8084)
+
+CRUD follow-ups, listado pending, complete/cancel, scheduler overdue → MISSED. BD `followup_db` (5436).
 
 ---
 
@@ -89,7 +93,7 @@ POST /api/auth/register (CLINIC_ADMIN + clinicName/country/timezone)
 - [ ] Tests integración gateway → servicios
 - [ ] Exception handler auth (409 email duplicado, 401 login)
 - [ ] Invitación DOCTOR/ASSISTANT a clínica existente
-- [ ] FollowUp Service
+- [ ] Notification Service (RabbitMQ)
 - [ ] Externalizar secrets (JWT, internal API key)
 
 ---
@@ -106,6 +110,7 @@ POST /api/auth/register (CLINIC_ADMIN + clinicName/country/timezone)
 | 2026-05-20 | Clinic Service MVP | clinic-service |
 | 2026-05-20 | Auth register → clinic onboarding | auth-service, clinic-service |
 | 2026-05-20 | Docs: progress/, domain boundaries, ADRs | docs |
+| 2026-05-20 | FollowUp Service MVP + overdue scheduler | followup-service |
 
 ---
 
@@ -115,4 +120,4 @@ POST /api/auth/register (CLINIC_ADMIN + clinicName/country/timezone)
 2. Progress log vive en `docs/progress/progress-log.md`.
 3. Register requiere: `clinicName`, `country`, `timezone` para `CLINIC_ADMIN`.
 4. `POST /api/clinics` público sigue siendo solo `PLATFORM_ADMIN`.
-5. Siguiente milestone: FollowUp Service.
+5. Siguiente milestone: Notification Service o tests de integración.

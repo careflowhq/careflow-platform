@@ -1,0 +1,30 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: followup-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5436/followup_db
+    username: careflow
+    password: careflow
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+careflow:
+  followup:
+    # Marks PENDING follow-ups past scheduledDate as MISSED (every 15 minutes).
+    overdue-check-cron: "0 */15 * * * *"
