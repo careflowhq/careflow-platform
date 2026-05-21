@@ -2,28 +2,133 @@ openapi: 3.0.0
 
 info:
   title: CareFlow Auth API
-  version: 1.0.0
+  version: 1.1.0
+  description: |
+    Auth endpoints exposed via API Gateway at `/api/auth/**`.
+    Protected routes require `Authorization: Bearer <JWT>`.
 
 paths:
 
   /auth/login:
     post:
       summary: User login
-
+      tags: [Public]
       requestBody:
         required: true
-
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
       responses:
         '200':
           description: Successful login
-
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
         '401':
-          description: Invalid credentials
+          description: Invalid email or password
+
+  /auth/register:
+    post:
+      summary: Register CLINIC_ADMIN and create clinic
+      tags: [Public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password, role, clinicName, country, timezone]
+              properties:
+                fullName: { type: string }
+                email: { type: string, format: email }
+                password: { type: string }
+                role: { type: string, enum: [CLINIC_ADMIN] }
+                clinicName: { type: string }
+                country: { type: string }
+                timezone: { type: string }
+      responses:
+        '201':
+          description: User and clinic created
+        '409':
+          description: Email already registered
 
   /auth/register-clinic:
     post:
-      summary: Register clinic and clinic admin
-
+      summary: Alias for CLINIC_ADMIN register
+      tags: [Public]
       responses:
         '201':
-          description: Clinic created
+          description: User and clinic created
+
+  /auth/invite:
+    post:
+      summary: Invite DOCTOR or ASSISTANT to existing clinic
+      tags: [Protected]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, role]
+              properties:
+                fullName: { type: string }
+                email: { type: string, format: email }
+                role: { type: string, enum: [DOCTOR, ASSISTANT] }
+      responses:
+        '201':
+          description: Invitation created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  email: { type: string }
+                  fullName: { type: string }
+                  role: { type: string }
+                  clinicId: { type: string, format: uuid }
+                  expiresAt: { type: string, format: date-time }
+        '403':
+          description: Only CLINIC_ADMIN can invite
+        '409':
+          description: Email registered or pending invite exists
+
+  /auth/register-invite:
+    post:
+      summary: Complete registration from invitation token
+      tags: [Public]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string }
+      responses:
+        '201':
+          description: User created
+        '404':
+          description: Invalid or used token
+        '410':
+          description: Invitation expired
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

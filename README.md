@@ -29,7 +29,9 @@ CareFlow helps private clinics automate patient engagement workflows through int
 
 ## Status
 
-MVP backend: auth, clinic, patient services operational with multi-tenant isolation. See [progress log](docs/progress/progress-log.md).
+MVP backend operational: **auth**, **clinic**, **patient**, **followup**, multi-tenant isolation, staff invitations (DOCTOR/ASSISTANT). See [progress log](docs/progress/progress-log.md).
+
+**Branches:** `main` includes hardening + followup. Staff invitations en `feat/staff-invitations` (pendiente merge).
 
 ## Local run
 
