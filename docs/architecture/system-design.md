@@ -1,38 +1,12 @@
 # System Design
 
-## Architecture Style
+## Architecture
 
-Pragmatic microservices architecture.
-
-## Core Services
-
-- api-gateway
-- auth-service
-- clinic-service
-- patient-service
-- followup-service
-- notification-service
-
-## Frontend
-
+- Microservices
+- Spring Boot
 - Next.js
-- Tailwind CSS
-
-## Backend
-
-- Spring Boot 3
-- Java 21
-
-## Infrastructure
-
-- Docker Compose
 - PostgreSQL
 - RabbitMQ
+- Docker
 
-## Multi-Tenancy
-
-Shared application with tenant isolation using clinicId.
-
-## Deployment
-
-Initial deployment on Hetzner VPS using Docker Compose.
+See [domain-boundaries.md](domain-boundaries.md), [service-ownership.md](service-ownership.md), [platform-diagram.md](platform-diagram.md).
