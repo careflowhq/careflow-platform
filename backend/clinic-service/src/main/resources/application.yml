@@ -1,23 +1,21 @@
 server:
-  port: 8081
+  port: 8083
 
 spring:
   application:
-    name: auth-service
+    name: clinic-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/auth_db
+    url: jdbc:postgresql://localhost:5435/clinic_db
     username: careflow
     password: careflow
 
   jpa:
     hibernate:
       ddl-auto: update
-
     properties:
       hibernate:
         format_sql: true
-
     show-sql: true
 
 management:
@@ -27,7 +25,5 @@ management:
         include: health,info
 
 careflow:
-  clinic-service:
-    url: http://localhost:8083
   internal:
     api-key: careflow-internal-dev-key

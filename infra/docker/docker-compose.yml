@@ -22,6 +22,16 @@ services:
     ports:
       - "5434:5432"
 
+  postgres-clinic:
+    image: postgres:16
+    container_name: postgres-clinic
+    environment:
+      POSTGRES_DB: clinic_db
+      POSTGRES_USER: careflow
+      POSTGRES_PASSWORD: careflow
+    ports:
+      - "5435:5432"
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq

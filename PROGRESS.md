@@ -9,7 +9,7 @@ Documento vivo para sincronizar el estado del proyecto entre sesiones (Cursor, C
 ## Última actualización
 
 **Fecha:** 2026-05-20  
-**Sesión:** Patient Service CRUD completo + fix JWT clinicId en gateway
+**Sesión:** Clinic Service MVP — tenants de nivel superior
 
 ---
 
@@ -24,7 +24,7 @@ CareFlow es una plataforma SaaS multi-tenant para clínicas de salud. El proyect
 | Componente | Estado | Notas |
 |------------|--------|-------|
 | Docker Compose | ✅ | PostgreSQL + RabbitMQ en `infra/docker/` |
-| PostgreSQL | ✅ | `auth_db` (5433), `patient_db` (5434) |
+| PostgreSQL | ✅ | `auth_db` (5433), `patient_db` (5434), `clinic_db` (5435) |
 | RabbitMQ | ✅ | Preparado para notificaciones (fase futura) |
 
 ---
@@ -62,6 +62,7 @@ CareFlow es una plataforma SaaS multi-tenant para clínicas de salud. El proyect
 | Rutas públicas | ✅ | `/health/**`, `/api/auth/**` |
 | Propagación identidad | ✅ | Headers `X-User-Id`, `X-Clinic-Id`, `X-Role` |
 | Proxy patient-service | ✅ | `/api/patients/**` → `localhost:8082` |
+| Proxy clinic-service | ✅ | `/api/clinics/**` → `localhost:8083` |
 
 **Clases clave (gateway):**
 
@@ -94,6 +95,8 @@ careflow:
 
 **Pendiente menor:** manejo de email duplicado en register (hoy devuelve 500, debería ser 409 Conflict).
 
+**Integración register → clinic-service:** ✅ Al registrar `CLINIC_ADMIN`, auth-service crea clínica vía `POST /internal/clinics` y usa el `clinicId` real.
+
 ### Patient Service (puerto 8082)
 
 | Feature | Estado | Detalle |
@@ -117,6 +120,37 @@ careflow:
 - `tenant/TenantHeaders.java` — constantes de headers
 - `exception/GlobalExceptionHandler.java` — manejo centralizado de errores
 - `security/SecurityConfig.java` — auth delegada al gateway
+
+### Clinic Service (puerto 8083)
+
+| Feature | Estado | Detalle |
+|---------|--------|---------|
+| CRUD MVP | ✅ | POST/GET/PUT/DELETE /clinics |
+| PostgreSQL | ✅ | `clinic_db` en puerto 5435 |
+| Top-level tenant | ✅ | Clinic = tenant raíz del SaaS |
+| Role-based access | ✅ | PLATFORM_ADMIN vs CLINIC_ADMIN |
+| Soft delete | ✅ | DELETE marca `active=false` |
+| Exception handling | ✅ | 401, 403, 404, 400 |
+
+**Clases clave (clinic-service):**
+
+- `entity/Clinic.java` — tenant raíz (id, name, country, timezone, subscriptionPlan, active)
+- `entity/SubscriptionPlan.java` — FREE, BASIC, PRO
+- `dto/CreateClinicRequest.java`, `dto/UpdateClinicRequest.java`, `dto/ClinicResponse.java`
+- `repository/ClinicRepository.java`
+- `service/ClinicService.java` — reglas de ownership por rol
+- `controller/ClinicController.java`
+- `security/ClinicAccessGuard.java` — PLATFORM_ADMIN vs own clinic
+- `tenant/TenantContext.java`, `TenantContextFilter.java`
+- `exception/GlobalExceptionHandler.java`
+
+**Modelo de ownership:**
+
+| Rol | POST | GET list | GET/{id} | PUT | DELETE |
+|-----|------|----------|----------|-----|--------|
+| PLATFORM_ADMIN | ✅ todas | ✅ activas | ✅ cualquiera | ✅ cualquiera | ✅ soft delete |
+| CLINIC_ADMIN | ❌ 403 | ✅ solo la suya | ✅ solo la suya | ✅ solo la suya | ❌ 403 |
+| DOCTOR/ASSISTANT | ❌ 403 | ✅ solo la suya | ✅ solo la suya | ❌ 403 | ❌ 403 |
 
 ---
 
@@ -172,7 +206,7 @@ Respuesta
 ### Pacientes no visibles entre sesiones de login
 
 **Causa:** `auth-service` genera `clinicId` con `UUID.randomUUID()` en cada registro. Usuarios distintos o re-registros tienen clínicas distintas.  
-**Comportamiento esperado:** Aislamiento multi-tenant funciona; pendiente **Clinic Service** para clínicas reales.
+**Comportamiento esperado:** Aislamiento multi-tenant funciona. **Clinic Service** ya existe; pendiente integrar auth register con POST /clinics.
 
 ---
 
@@ -180,15 +214,15 @@ Respuesta
 
 ### Inmediato
 
-- [x] Patient Service MVP (CRUD completo)
+- [x] Clinic Service MVP
+- [x] Integrar auth register → crear clinic real + asignar clinicId
 - [ ] Tests de integración gateway → patient-service
 
 ### Corto plazo
 
 - [ ] Exception handler en auth-service (409 email duplicado, 401 credenciales inválidas)
 - [ ] Externalizar JWT secret vía env var en todos los servicios
-- [ ] Clinic Service
-- [ ] Tests de integración gateway → downstream headers
+- [ ] FollowUp Service
 
 ### Fase 2+
 
@@ -217,6 +251,10 @@ mvn spring-boot:run
 # Patient Service
 cd backend/patient-service
 mvn spring-boot:run
+
+# Clinic Service
+cd backend/clinic-service
+mvn spring-boot:run
 ```
 
 ### Pruebas manuales sugeridas
@@ -228,7 +266,7 @@ curl http://localhost:8080/health
 # Login (público) — guarda el token
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"abel@test.com","password":"123456"}'
+  -d '{"email":"jorge@test.com","password":"123456"}'
 
 # Crear paciente (protegido)
 curl -X POST http://localhost:8080/api/patients \
@@ -253,6 +291,16 @@ curl -X PUT http://localhost:8080/api/patients/<patient-id> \
 # Eliminar paciente (protegido)
 curl -X DELETE http://localhost:8080/api/patients/<patient-id> \
   -H "Authorization: Bearer <token>"
+
+# Crear clínica (PLATFORM_ADMIN)
+curl -X POST http://localhost:8080/api/clinics \
+  -H "Authorization: Bearer <platform-admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Clínica Lima Norte","country":"PE","timezone":"America/Lima","subscriptionPlan":"BASIC"}'
+
+# Ver clínica propia (CLINIC_ADMIN)
+curl http://localhost:8080/api/clinics/<clinic-id> \
+  -H "Authorization: Bearer <token>"
 ```
 
 ---
@@ -266,7 +314,8 @@ curl -X DELETE http://localhost:8080/api/patients/<patient-id> \
 | 2026-05-19 | Propagación headers X-User-Id, X-Clinic-Id, X-Role | api-gateway |
 | 2026-05-20 | Patient Service MVP con tenant isolation | patient-service |
 | 2026-05-20 | Fix parse JWT clinicId (String → UUID) | api-gateway |
-| 2026-05-20 | Patient Service CRUD verificado end-to-end | patient-service |
+| 2026-05-20 | Clinic Service MVP con ownership por rol | clinic-service |
+| 2026-05-20 | Integración auth register → clinic-service onboarding | auth-service, clinic-service |
 
 ---
 
@@ -276,5 +325,7 @@ curl -X DELETE http://localhost:8080/api/patients/<patient-id> \
 2. Auth distribuida funciona end-to-end: login via gateway devuelve JWT válido.
 3. Gateway ya propaga identidad multi-tenant a servicios downstream.
 4. Patient Service CRUD completo verificado: POST, GET list, GET by id, PUT, DELETE.
-5. Siguiente milestone: **Clinic Service** (clinicId real), FollowUp Service.
-6. Usar siempre prompt con: *"Suggest a professional git commit message"* al final.
+5. Clinic Service MVP: tenants de nivel superior con CRUD y reglas por rol.
+6. Siguiente milestone: integrar auth register con Clinic Service, FollowUp Service.
+6. Register CLINIC_ADMIN crea clínica real en clinic-service automáticamente.
+7. Siguiente milestone: FollowUp Service, invitación DOCTOR/ASSISTANT a clínica existente.

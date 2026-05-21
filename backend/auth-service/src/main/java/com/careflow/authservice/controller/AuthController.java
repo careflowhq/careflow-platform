@@ -4,7 +4,9 @@ import com.careflow.authservice.dto.LoginRequest;
 import com.careflow.authservice.dto.LoginResponse;
 import com.careflow.authservice.dto.RegisterRequest;
 import com.careflow.authservice.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,8 +16,9 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/register")
-    public void register(@RequestBody RegisterRequest request) {
+    @PostMapping({"/register", "/register-clinic"})
+    @ResponseStatus(HttpStatus.CREATED)
+    public void register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
     }
 
