@@ -2,6 +2,7 @@ package com.careflow.patientservice.controller;
 
 import com.careflow.patientservice.dto.CreatePatientRequest;
 import com.careflow.patientservice.dto.PatientResponse;
+import com.careflow.patientservice.dto.UpdatePatientRequest;
 import com.careflow.patientservice.service.PatientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,5 +33,18 @@ public class PatientController {
     @GetMapping("/{id}")
     public PatientResponse findById(@PathVariable UUID id) {
         return patientService.findByIdForCurrentClinic(id);
+    }
+
+    @PutMapping("/{id}")
+    public PatientResponse update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdatePatientRequest request) {
+        return patientService.update(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID id) {
+        patientService.delete(id);
     }
 }

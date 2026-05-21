@@ -2,6 +2,7 @@ package com.careflow.patientservice.service;
 
 import com.careflow.patientservice.dto.CreatePatientRequest;
 import com.careflow.patientservice.dto.PatientResponse;
+import com.careflow.patientservice.dto.UpdatePatientRequest;
 import com.careflow.patientservice.entity.Patient;
 import com.careflow.patientservice.entity.PatientStatus;
 import com.careflow.patientservice.exception.PatientNotFoundException;
@@ -38,19 +39,37 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public List<PatientResponse> findAllForCurrentClinic() {
-        UUID clinicId = TenantContext.clinicId();
-
-        return patientRepository.findByClinicIdOrderByCreatedAtDesc(clinicId).stream()
+        return patientRepository.findByClinicIdOrderByCreatedAtDesc(TenantContext.clinicId()).stream()
                 .map(PatientResponse::from)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public PatientResponse findByIdForCurrentClinic(UUID id) {
-        UUID clinicId = TenantContext.clinicId();
+        return PatientResponse.from(getPatientForCurrentClinic(id));
+    }
 
-        return patientRepository.findByIdAndClinicId(id, clinicId)
-                .map(PatientResponse::from)
+    @Transactional
+    public PatientResponse update(UUID id, UpdatePatientRequest request) {
+        Patient patient = getPatientForCurrentClinic(id);
+
+        patient.setFullName(request.fullName());
+        patient.setPhoneNumber(request.phoneNumber());
+        patient.setDiagnosis(request.diagnosis());
+        patient.setAssignedDoctorId(request.assignedDoctorId());
+        patient.setStatus(request.status() != null ? request.status() : patient.getStatus());
+
+        return PatientResponse.from(patientRepository.save(patient));
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+        Patient patient = getPatientForCurrentClinic(id);
+        patientRepository.delete(patient);
+    }
+
+    private Patient getPatientForCurrentClinic(UUID id) {
+        return patientRepository.findByIdAndClinicId(id, TenantContext.clinicId())
                 .orElseThrow(() -> new PatientNotFoundException(id));
     }
 }

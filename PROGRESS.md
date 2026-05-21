@@ -9,7 +9,7 @@ Documento vivo para sincronizar el estado del proyecto entre sesiones (Cursor, C
 ## Última actualización
 
 **Fecha:** 2026-05-20  
-**Sesión:** Patient Service MVP con aislamiento multi-tenant
+**Sesión:** Patient Service CRUD completo + fix JWT clinicId en gateway
 
 ---
 
@@ -24,7 +24,7 @@ CareFlow es una plataforma SaaS multi-tenant para clínicas de salud. El proyect
 | Componente | Estado | Notas |
 |------------|--------|-------|
 | Docker Compose | ✅ | PostgreSQL + RabbitMQ en `infra/docker/` |
-| PostgreSQL | ✅ | Usado por auth-service |
+| PostgreSQL | ✅ | `auth_db` (5433), `patient_db` (5434) |
 | RabbitMQ | ✅ | Preparado para notificaciones (fase futura) |
 
 ---
@@ -98,7 +98,7 @@ careflow:
 
 | Feature | Estado | Detalle |
 |---------|--------|---------|
-| CRUD MVP | ✅ | POST/GET /patients, GET /patients/{id} |
+| CRUD MVP | ✅ | POST/GET/PUT/DELETE /patients |
 | PostgreSQL | ✅ | `patient_db` en puerto 5434 |
 | TenantContext | ✅ | Lee headers X-User-Id, X-Clinic-Id, X-Role |
 | Aislamiento clinicId | ✅ | Queries siempre filtradas por clinicId del contexto |
@@ -108,7 +108,7 @@ careflow:
 
 - `entity/Patient.java` — aggregate con clinicId obligatorio
 - `entity/PatientStatus.java` — ACTIVE, AT_RISK, INACTIVE
-- `dto/CreatePatientRequest.java`, `dto/PatientResponse.java`
+- `dto/CreatePatientRequest.java`, `dto/UpdatePatientRequest.java`, `dto/PatientResponse.java`
 - `repository/PatientRepository.java` — findByClinicId, findByIdAndClinicId
 - `service/PatientService.java` — lógica de negocio con tenant isolation
 - `controller/PatientController.java` — REST endpoints
@@ -164,14 +164,23 @@ Respuesta
 **Causa:** Usuario ya registrado directamente contra auth-service (`abel@test.com`).  
 **Comportamiento:** Constraint único en PostgreSQL → 500. Login funciona correctamente.
 
+### 500 en `/api/patients` — JWT clinicId parse error
+
+**Causa:** Gateway intentaba leer `clinicId` como `UUID.class`; JJWT lo devuelve como `String`.  
+**Fix:** Parser flexible con `getClaimAsString()` + `UUID.fromString()`. Auth-service emite `clinicId.toString()`.
+
+### Pacientes no visibles entre sesiones de login
+
+**Causa:** `auth-service` genera `clinicId` con `UUID.randomUUID()` en cada registro. Usuarios distintos o re-registros tienen clínicas distintas.  
+**Comportamiento esperado:** Aislamiento multi-tenant funciona; pendiente **Clinic Service** para clínicas reales.
+
 ---
 
 ## Próximos pasos (roadmap)
 
 ### Inmediato
 
-- [x] Patient Service MVP (create + list + get by id)
-- [ ] Patient Service: PUT/PATCH update, DELETE
+- [x] Patient Service MVP (CRUD completo)
 - [ ] Tests de integración gateway → patient-service
 
 ### Corto plazo
@@ -234,6 +243,16 @@ curl http://localhost:8080/api/patients \
 # Obtener paciente por ID (protegido)
 curl http://localhost:8080/api/patients/<patient-id> \
   -H "Authorization: Bearer <token>"
+
+# Actualizar paciente (protegido)
+curl -X PUT http://localhost:8080/api/patients/<patient-id> \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"fullName":"Juan Pérez","phoneNumber":"+51999111222","diagnosis":"Hipertensión controlada","status":"AT_RISK"}'
+
+# Eliminar paciente (protegido)
+curl -X DELETE http://localhost:8080/api/patients/<patient-id> \
+  -H "Authorization: Bearer <token>"
 ```
 
 ---
@@ -246,7 +265,8 @@ curl http://localhost:8080/api/patients/<patient-id> \
 | 2026-05-19 | Fix StripPrefix para rutas auth | api-gateway |
 | 2026-05-19 | Propagación headers X-User-Id, X-Clinic-Id, X-Role | api-gateway |
 | 2026-05-20 | Patient Service MVP con tenant isolation | patient-service |
-| 2026-05-20 | Ruta gateway /api/patients/** | api-gateway |
+| 2026-05-20 | Fix parse JWT clinicId (String → UUID) | api-gateway |
+| 2026-05-20 | Patient Service CRUD verificado end-to-end | patient-service |
 
 ---
 
@@ -255,5 +275,6 @@ curl http://localhost:8080/api/patients/<patient-id> \
 1. El monorepo completo debe abrirse en Cursor (docs + backend + infra).
 2. Auth distribuida funciona end-to-end: login via gateway devuelve JWT válido.
 3. Gateway ya propaga identidad multi-tenant a servicios downstream.
-4. Patient Service MVP implementado con aislamiento por clinicId.
-5. Siguiente milestone: update/delete pacientes, Clinic Service, FollowUp Service.
+4. Patient Service CRUD completo verificado: POST, GET list, GET by id, PUT, DELETE.
+5. Siguiente milestone: **Clinic Service** (clinicId real), FollowUp Service.
+6. Usar siempre prompt con: *"Suggest a professional git commit message"* al final.

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 
 import java.util.UUID;
 
-public record CreatePatientRequest(
+public record UpdatePatientRequest(
         @NotBlank String fullName,
         @NotBlank String phoneNumber,
         String diagnosis,
