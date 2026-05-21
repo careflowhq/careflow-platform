@@ -6,6 +6,8 @@ import com.careflow.authservice.dto.LoginResponse;
 import com.careflow.authservice.dto.RegisterRequest;
 import com.careflow.authservice.entity.User;
 import com.careflow.authservice.entity.UserRole;
+import com.careflow.authservice.exception.DuplicateEmailException;
+import com.careflow.authservice.exception.InvalidCredentialsException;
 import com.careflow.authservice.exception.InvalidRegistrationException;
 import com.careflow.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,10 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new DuplicateEmailException(request.email());
+        }
+
         UUID clinicId = resolveClinicId(request);
 
         User user = User.builder()
@@ -66,17 +72,11 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow();
+                .orElseThrow(InvalidCredentialsException::new);
 
-        boolean validPassword = passwordEncoder.matches(
-                request.password(),
-                user.getPasswordHash()
-        );
-
-        if (!validPassword) {
-            throw new RuntimeException("Invalid credentials");
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new InvalidCredentialsException();
         }
 
         String token = jwtService.generateToken(

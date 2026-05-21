@@ -10,13 +10,13 @@ Documento vivo de **project memory** para sincronizar estado entre sesiones (Cur
 ## Última actualización
 
 **Fecha:** 2026-05-20  
-**Sesión:** Integración auth register → clinic-service + reorganización docs
+**Sesión:** Hardening Opción A — auth exceptions, secrets, smoke tests
 
 ---
 
 ## Estado general
 
-CareFlow es una plataforma SaaS multi-tenant para clínicas de salud. El proyecto supera la fase tutorial: infraestructura real, auth distribuida end-to-end, tenants reales y primer dominio clínico (patients).
+CareFlow es una plataforma SaaS multi-tenant para clínicas de salud. Backend MVP completo: auth, clinic, patient, followup con aislamiento multi-tenant end-to-end.
 
 **Documentación institucional:**
 
@@ -48,7 +48,7 @@ JWT validation, propagación `X-User-Id` / `X-Clinic-Id` / `X-Role`, proxy a aut
 
 ### Auth Service (8081)
 
-Register + login, BCrypt, JWT. **Register CLINIC_ADMIN** crea clínica real vía `POST /internal/clinics` en clinic-service.
+Register + login, BCrypt, JWT. **Register CLINIC_ADMIN** crea clínica real vía `POST /internal/clinics`. **409** email duplicado, **401** credenciales inválidas.
 
 ### Clinic Service (8083)
 
@@ -90,11 +90,10 @@ POST /api/auth/register (CLINIC_ADMIN + clinicName/country/timezone)
 
 ## Próximos pasos
 
-- [ ] Tests integración gateway → servicios
-- [ ] Exception handler auth (409 email duplicado, 401 login)
 - [ ] Invitación DOCTOR/ASSISTANT a clínica existente
 - [ ] Notification Service (RabbitMQ)
-- [ ] Externalizar secrets (JWT, internal API key)
+- [ ] Externalizar DB credentials (prod)
+- [ ] Frontend Next.js dashboard
 
 ---
 
@@ -111,6 +110,7 @@ POST /api/auth/register (CLINIC_ADMIN + clinicName/country/timezone)
 | 2026-05-20 | Auth register → clinic onboarding | auth-service, clinic-service |
 | 2026-05-20 | Docs: progress/, domain boundaries, ADRs | docs |
 | 2026-05-20 | FollowUp Service MVP + overdue scheduler | followup-service |
+| 2026-05-20 | Auth 409/401, externalized secrets, smoke tests | auth, gateway, docs |
 
 ---
 

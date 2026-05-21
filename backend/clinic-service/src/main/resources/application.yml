@@ -26,4 +26,4 @@ management:
 
 careflow:
   internal:
-    api-key: careflow-internal-dev-key
+    api-key: ${CAREFLOW_INTERNAL_API_KEY:careflow-internal-dev-key}

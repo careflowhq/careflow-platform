@@ -1,5 +1,8 @@
 version: '3.9'
 
+# Optional: copy .env.example to infra/docker/.env for shared secrets when containerizing services.
+# Java services read CAREFLOW_* from the host environment when run via mvn spring-boot:run.
+
 services:
 
   postgres-auth:

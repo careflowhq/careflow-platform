@@ -34,8 +34,18 @@ MVP backend: auth, clinic, patient services operational with multi-tenant isolat
 ## Local run
 
 ```bash
+cp .env.example .env   # optional — defaults work for local dev
 cd infra/docker && docker compose up -d
-# Start: api-gateway, auth-service, clinic-service, patient-service
+# Start: api-gateway, auth-service, clinic-service, patient-service, followup-service
 ```
+
+**Environment variables** (see [.env.example](.env.example)):
+
+| Variable | Used by | Purpose |
+|----------|---------|---------|
+| `CAREFLOW_JWT_SECRET` | api-gateway, auth-service | Sign/validate JWT (min 32 chars) |
+| `CAREFLOW_INTERNAL_API_KEY` | auth-service, clinic-service | Service-to-service `/internal/**` |
+
+**Smoke tests:** import [docs/api/careflow-smoke.postman_collection.json](docs/api/careflow-smoke.postman_collection.json) into Postman.
 
 Details: [docs/progress/progress-log.md](docs/progress/progress-log.md)
