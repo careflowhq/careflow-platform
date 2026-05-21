@@ -37,7 +37,13 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/health/**", "/api/auth/**").permitAll()
+                        .pathMatchers("/health/**").permitAll()
+                        .pathMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/register-clinic",
+                                "/api/auth/register-invite"
+                        ).permitAll()
                         .anyExchange().authenticated()
                 )
                 .build();

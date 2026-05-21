@@ -48,7 +48,7 @@ JWT validation, propagación `X-User-Id` / `X-Clinic-Id` / `X-Role`, proxy a aut
 
 ### Auth Service (8081)
 
-Register + login, BCrypt, JWT. **Register CLINIC_ADMIN** crea clínica real vía `POST /internal/clinics`. **409** email duplicado, **401** credenciales inválidas.
+Register + login, BCrypt, JWT. **Register CLINIC_ADMIN** crea clínica real vía `POST /internal/clinics`. **409** email duplicado, **401** credenciales inválidas. **Invitación staff:** `POST /api/auth/invite` (CLINIC_ADMIN) + `POST /api/auth/register-invite` (público).
 
 ### Clinic Service (8083)
 
@@ -90,8 +90,7 @@ POST /api/auth/register (CLINIC_ADMIN + clinicName/country/timezone)
 
 ## Próximos pasos
 
-- [ ] Invitación DOCTOR/ASSISTANT a clínica existente
-- [ ] Notification Service (RabbitMQ)
+- [ ] Notification Service (RabbitMQ) — enviar invite token por email/WhatsApp
 - [ ] Externalizar DB credentials (prod)
 - [ ] Frontend Next.js dashboard
 
@@ -111,6 +110,7 @@ POST /api/auth/register (CLINIC_ADMIN + clinicName/country/timezone)
 | 2026-05-20 | Docs: progress/, domain boundaries, ADRs | docs |
 | 2026-05-20 | FollowUp Service MVP + overdue scheduler | followup-service |
 | 2026-05-20 | Auth 409/401, externalized secrets, smoke tests | auth, gateway, docs |
+| 2026-05-20 | Staff invitation DOCTOR/ASSISTANT | auth-service |
 
 ---
 
