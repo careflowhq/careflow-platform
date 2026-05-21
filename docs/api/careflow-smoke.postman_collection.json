@@ -1,0 +1,151 @@
+{
+  "info": {
+    "name": "CareFlow Smoke E2E",
+    "description": "Manual smoke tests against local stack (gateway :8080). Import into Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "patientId", "value": "" },
+    { "key": "followUpId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.collectionVariables.set('token', pm.response.json().token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"jorge@test.com\",\n  \"password\": \"YOUR_PASSWORD\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      }
+    },
+    {
+      "name": "2. Register duplicate (expect 409)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Dup\",\n  \"email\": \"jorge@test.com\",\n  \"password\": \"secret123\",\n  \"role\": \"CLINIC_ADMIN\",\n  \"clinicName\": \"X\",\n  \"country\": \"PE\",\n  \"timezone\": \"America/Lima\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/register"
+      }
+    },
+    {
+      "name": "3. List clinics",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/clinics"
+      }
+    },
+    {
+      "name": "4. List patients",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/patients"
+      }
+    },
+    {
+      "name": "5. Create patient",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('patientId', pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"Smoke Patient\",\n  \"phoneNumber\": \"+51999000111\",\n  \"diagnosis\": \"Test\"\n}"
+        },
+        "url": "{{baseUrl}}/api/patients"
+      }
+    },
+    {
+      "name": "6. Create follow-up",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('followUpId', pm.response.json().id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"type\": \"POST_CONSULTATION\",\n  \"scheduledDate\": \"2026-12-01T10:00:00Z\",\n  \"notes\": \"Smoke test\"\n}"
+        },
+        "url": "{{baseUrl}}/api/followups"
+      }
+    },
+    {
+      "name": "7. List pending follow-ups",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/followups/pending"
+      }
+    },
+    {
+      "name": "8. Complete follow-up",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"notes\": \"Completed in smoke test\"\n}"
+        },
+        "url": "{{baseUrl}}/api/followups/{{followUpId}}/complete"
+      }
+    },
+    {
+      "name": "9. Protected route without token (expect 401)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/patients"
+      }
+    }
+  ]
+}

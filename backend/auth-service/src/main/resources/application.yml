@@ -27,7 +27,9 @@ management:
         include: health,info
 
 careflow:
+  jwt:
+    secret: ${CAREFLOW_JWT_SECRET:careflow-secret-key-careflow-secret-key}
   clinic-service:
     url: http://localhost:8083
   internal:
-    api-key: careflow-internal-dev-key
+    api-key: ${CAREFLOW_INTERNAL_API_KEY:careflow-internal-dev-key}
