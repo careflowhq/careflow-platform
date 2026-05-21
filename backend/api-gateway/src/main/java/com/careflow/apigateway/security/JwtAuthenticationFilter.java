@@ -3,6 +3,7 @@ package com.careflow.apigateway.security;
 import com.careflow.apigateway.service.JwtService;
 import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
@@ -14,6 +15,10 @@ public class JwtAuthenticationFilter extends AuthenticationWebFilter {
     public JwtAuthenticationFilter(JwtService jwtService) {
         super(createAuthenticationManager(jwtService));
         setServerAuthenticationConverter(createAuthenticationConverter());
+        setAuthenticationFailureHandler((exchange, ex) -> {
+            exchange.getExchange().getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getExchange().getResponse().setComplete();
+        });
     }
 
     private static ReactiveAuthenticationManager createAuthenticationManager(JwtService jwtService) {

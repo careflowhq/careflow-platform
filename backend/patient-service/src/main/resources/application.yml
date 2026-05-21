@@ -1,0 +1,25 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: patient-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5434/patient_db
+    username: careflow
+    password: careflow
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

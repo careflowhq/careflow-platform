@@ -30,16 +30,21 @@ public class JwtService {
                     .getPayload();
 
             String userId = claims.getSubject();
-            UUID clinicId = claims.get("clinicId", UUID.class);
+            String clinicId = getClaimAsString(claims, "clinicId");
             String role = claims.get("role", String.class);
 
             if (userId == null || clinicId == null || role == null) {
                 throw new JwtException("Missing required JWT claims");
             }
 
-            return new JwtClaims(UUID.fromString(userId), clinicId, role);
+            return new JwtClaims(UUID.fromString(userId), UUID.fromString(clinicId), role);
         } catch (JwtException | IllegalArgumentException ex) {
             throw new JwtException("Invalid or expired JWT", ex);
         }
+    }
+
+    private String getClaimAsString(Claims claims, String name) {
+        Object value = claims.get(name);
+        return value != null ? value.toString() : null;
     }
 }

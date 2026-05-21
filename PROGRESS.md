@@ -8,8 +8,8 @@ Documento vivo para sincronizar el estado del proyecto entre sesiones (Cursor, C
 
 ## Última actualización
 
-**Fecha:** 2026-05-19  
-**Sesión:** Propagación de identidad multi-tenant en API Gateway
+**Fecha:** 2026-05-20  
+**Sesión:** Patient Service MVP con aislamiento multi-tenant
 
 ---
 
@@ -61,6 +61,7 @@ CareFlow es una plataforma SaaS multi-tenant para clínicas de salud. El proyect
 | JWT validation (jjwt 0.12.5) | ✅ | Stateless, Spring Security WebFlux |
 | Rutas públicas | ✅ | `/health/**`, `/api/auth/**` |
 | Propagación identidad | ✅ | Headers `X-User-Id`, `X-Clinic-Id`, `X-Role` |
+| Proxy patient-service | ✅ | `/api/patients/**` → `localhost:8082` |
 
 **Clases clave (gateway):**
 
@@ -93,6 +94,30 @@ careflow:
 
 **Pendiente menor:** manejo de email duplicado en register (hoy devuelve 500, debería ser 409 Conflict).
 
+### Patient Service (puerto 8082)
+
+| Feature | Estado | Detalle |
+|---------|--------|---------|
+| CRUD MVP | ✅ | POST/GET /patients, GET /patients/{id} |
+| PostgreSQL | ✅ | `patient_db` en puerto 5434 |
+| TenantContext | ✅ | Lee headers X-User-Id, X-Clinic-Id, X-Role |
+| Aislamiento clinicId | ✅ | Queries siempre filtradas por clinicId del contexto |
+| Exception handling | ✅ | 401, 404, 400 vía ProblemDetail |
+
+**Clases clave (patient-service):**
+
+- `entity/Patient.java` — aggregate con clinicId obligatorio
+- `entity/PatientStatus.java` — ACTIVE, AT_RISK, INACTIVE
+- `dto/CreatePatientRequest.java`, `dto/PatientResponse.java`
+- `repository/PatientRepository.java` — findByClinicId, findByIdAndClinicId
+- `service/PatientService.java` — lógica de negocio con tenant isolation
+- `controller/PatientController.java` — REST endpoints
+- `tenant/TenantContext.java` — identidad request-scoped (ThreadLocal)
+- `tenant/TenantContextFilter.java` — extrae headers del gateway
+- `tenant/TenantHeaders.java` — constantes de headers
+- `exception/GlobalExceptionHandler.java` — manejo centralizado de errores
+- `security/SecurityConfig.java` — auth delegada al gateway
+
 ---
 
 ## Flujo de autenticación end-to-end
@@ -119,8 +144,8 @@ API Gateway
   │  2. TenantIdentityPropagationFilter inyecta:
   │     X-User-Id, X-Clinic-Id, X-Role
   ▼
-Downstream Service (futuro: Patient Service)
-  │  Lee headers de confianza (no valida JWT directamente)
+Downstream Service (Patient Service)
+  │  Lee X-Clinic-Id para filtrar datos
   ▼
 Respuesta
 ```
@@ -145,11 +170,9 @@ Respuesta
 
 ### Inmediato
 
-- [ ] Patient Service MVP
-  - CRUD pacientes
-  - Aislamiento por `clinicId` (header `X-Clinic-Id`)
-  - Endpoints protegidos vía gateway
-  - Asignación doctor-paciente
+- [x] Patient Service MVP (create + list + get by id)
+- [ ] Patient Service: PUT/PATCH update, DELETE
+- [ ] Tests de integración gateway → patient-service
 
 ### Corto plazo
 
@@ -181,6 +204,10 @@ mvn spring-boot:run
 # API Gateway
 cd backend/api-gateway
 mvn spring-boot:run
+
+# Patient Service
+cd backend/patient-service
+mvn spring-boot:run
 ```
 
 ### Pruebas manuales sugeridas
@@ -189,13 +216,23 @@ mvn spring-boot:run
 # Health (público)
 curl http://localhost:8080/health
 
-# Login (público)
+# Login (público) — guarda el token
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"abel@test.com","password":"123456"}'
 
-# Ruta protegida con token (cuando exista Patient Service)
+# Crear paciente (protegido)
+curl -X POST http://localhost:8080/api/patients \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"fullName":"Juan Pérez","phoneNumber":"+51999111222","diagnosis":"Hipertensión"}'
+
+# Listar pacientes de la clínica (protegido)
 curl http://localhost:8080/api/patients \
+  -H "Authorization: Bearer <token>"
+
+# Obtener paciente por ID (protegido)
+curl http://localhost:8080/api/patients/<patient-id> \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -208,6 +245,8 @@ curl http://localhost:8080/api/patients \
 | 2026-05-19 | JWT validation stateless en gateway | api-gateway |
 | 2026-05-19 | Fix StripPrefix para rutas auth | api-gateway |
 | 2026-05-19 | Propagación headers X-User-Id, X-Clinic-Id, X-Role | api-gateway |
+| 2026-05-20 | Patient Service MVP con tenant isolation | patient-service |
+| 2026-05-20 | Ruta gateway /api/patients/** | api-gateway |
 
 ---
 
@@ -216,5 +255,5 @@ curl http://localhost:8080/api/patients \
 1. El monorepo completo debe abrirse en Cursor (docs + backend + infra).
 2. Auth distribuida funciona end-to-end: login via gateway devuelve JWT válido.
 3. Gateway ya propaga identidad multi-tenant a servicios downstream.
-4. Siguiente milestone natural: **Patient Service** con aislamiento por clinicId.
-5. Usar siempre prompt con: *"Suggest a professional git commit message"* al final.
+4. Patient Service MVP implementado con aislamiento por clinicId.
+5. Siguiente milestone: update/delete pacientes, Clinic Service, FollowUp Service.
