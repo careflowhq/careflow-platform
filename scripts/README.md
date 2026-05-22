@@ -12,8 +12,11 @@
 
 **Qué hace `start-local.ps1`:**
 1. Levanta Docker (PostgreSQL ×5 + RabbitMQ)
-2. Abre una ventana por cada servicio Java (8080–8085)
-3. Inicia el frontend Next.js en `:3000`
+2. Inicia los microservicios (8081–8085) y **espera** a que escuchen en sus puertos
+3. Inicia **api-gateway** (:8080) al final y espera a que esté listo
+4. Inicia el frontend Next.js en `:3000`
+
+La primera vez Maven puede tardar **1–2 min por servicio**. El script espera automáticamente; no abras la app hasta ver `Listo`.
 
 **Requisitos:** Docker Desktop, Java 21, Maven, Node.js 20+
 
@@ -37,6 +40,19 @@ chmod +x scripts/*.sh
 
 Opcional: copiar `.env.example` → `.env` en la raíz. Los scripts cargan `.env` si existe.
 
-## VPS (próximo paso)
+## Detener
+
+```powershell
+.\scripts\stop-local.ps1
+```
+
+`stop-local` ejecuta `docker compose down` **sin borrar volúmenes**: tus usuarios y datos en Postgres se conservan entre reinicios.
+
+Para resetear todo desde cero (borra datos):
+
+```powershell
+cd infra\docker
+docker compose down -v
+```
 
 El deploy en producción usará Docker Compose completo (distinto a este arranque dev). Ver `docs/deploy/` (pendiente).
