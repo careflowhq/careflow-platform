@@ -44,6 +44,8 @@ cd infra/docker && docker compose up -d
 # Start: api-gateway, auth-service, clinic-service, patient-service, followup-service, notification-service
 ```
 
+**Atajo (Windows):** `.\scripts\start-local.ps1` — Docker + 6 servicios + frontend. Ver [scripts/README.md](scripts/README.md).
+
 ### Frontend
 
 ```bash
