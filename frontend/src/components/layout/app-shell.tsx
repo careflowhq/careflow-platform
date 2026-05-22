@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Bell,
   CalendarClock,
   LayoutDashboard,
   LogOut,
@@ -19,6 +20,7 @@ const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/patients", label: "Pacientes", icon: Users },
   { href: "/followups", label: "Seguimientos", icon: CalendarClock },
+  { href: "/notifications", label: "Notificaciones", icon: Bell },
   { href: "/team", label: "Equipo", icon: UsersRound, adminOnly: true },
 ];
 

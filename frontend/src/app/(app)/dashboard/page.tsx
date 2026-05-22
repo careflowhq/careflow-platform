@@ -7,6 +7,7 @@ import { AlertTriangle, CalendarClock } from "lucide-react";
 import { listFollowUps } from "@/lib/api/followups";
 import { listPatients } from "@/lib/api/patients";
 import { formatDate } from "@/lib/utils";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { labelFollowUpStatus, followUpTypeLabel } from "@/lib/labels";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,7 +107,7 @@ export default function DashboardPage() {
                     <li key={p.id} className="flex items-center justify-between px-4 py-3 text-sm">
                       <div>
                         <p className="font-medium">{p.fullName}</p>
-                        <p className="text-slate-500">{p.phoneNumber}</p>
+                        <p className="text-slate-500">{formatPhoneDisplay(p.phoneNumber)}</p>
                       </div>
                       <Badge label={p.status} display="En riesgo" />
                     </li>

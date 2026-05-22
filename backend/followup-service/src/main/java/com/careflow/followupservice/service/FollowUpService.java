@@ -8,6 +8,9 @@ import com.careflow.followupservice.entity.FollowUp;
 import com.careflow.followupservice.entity.FollowUpStatus;
 import com.careflow.followupservice.exception.FollowUpInvalidStateException;
 import com.careflow.followupservice.exception.FollowUpNotFoundException;
+import com.careflow.followupservice.client.PatientServiceClient;
+import com.careflow.followupservice.client.PatientSummary;
+import com.careflow.followupservice.messaging.FollowUpEventPublisher;
 import com.careflow.followupservice.repository.FollowUpRepository;
 import com.careflow.followupservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,8 @@ import java.util.UUID;
 public class FollowUpService {
 
     private final FollowUpRepository followUpRepository;
+    private final PatientServiceClient patientServiceClient;
+    private final FollowUpEventPublisher eventPublisher;
 
     @Transactional
     public FollowUpResponse create(CreateFollowUpRequest request) {
@@ -36,7 +41,15 @@ public class FollowUpService {
                 .status(FollowUpStatus.PENDING)
                 .build();
 
-        return FollowUpResponse.from(followUpRepository.save(followUp));
+        FollowUp saved = followUpRepository.save(followUp);
+        PatientSummary patient = patientServiceClient.getPatient(
+                saved.getPatientId(),
+                saved.getClinicId(),
+                TenantContext.userId(),
+                TenantContext.role()
+        );
+        eventPublisher.publishScheduled(saved, patient);
+        return FollowUpResponse.from(saved);
     }
 
     @Transactional(readOnly = true)

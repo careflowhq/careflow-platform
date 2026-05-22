@@ -52,3 +52,23 @@ export function labelPatientStatus(status: PatientStatus | string): string {
 export function labelFollowUpStatus(status: FollowUpStatus | string): string {
   return followUpStatusLabels[status as FollowUpStatus] ?? status;
 }
+
+export const notificationStatusLabels: Record<string, string> = {
+  PENDING: "Pendiente",
+  READY: "Lista para enviar",
+  SENT: "Enviada",
+  FAILED: "Fallida",
+};
+
+export const notificationEventLabels: Record<string, string> = {
+  "followup.scheduled": "Seguimiento programado",
+  "followup.missed": "Seguimiento vencido",
+};
+
+export function labelNotificationStatus(status: string): string {
+  return notificationStatusLabels[status] ?? status;
+}
+
+export function labelNotificationEvent(eventType: string): string {
+  return notificationEventLabels[eventType] ?? eventType;
+}

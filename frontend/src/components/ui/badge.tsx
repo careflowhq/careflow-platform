@@ -9,6 +9,9 @@ const statusStyles: Record<string, string> = {
   COMPLETED: "bg-emerald-100 text-emerald-800",
   MISSED: "bg-red-100 text-red-800",
   CANCELLED: "bg-slate-100 text-slate-600",
+  READY: "bg-teal-100 text-teal-800",
+  SENT: "bg-emerald-100 text-emerald-800",
+  FAILED: "bg-red-100 text-red-800",
 };
 
 export function Badge({

@@ -45,6 +45,16 @@ services:
     ports:
       - "5436:5432"
 
+  postgres-notification:
+    image: postgres:16
+    container_name: postgres-notification
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: careflow
+      POSTGRES_PASSWORD: careflow
+    ports:
+      - "5437:5432"
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq

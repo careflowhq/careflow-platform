@@ -41,7 +41,7 @@ MVP **backend + frontend** en local: auth, clinic, patient, followup, invitacion
 ```bash
 cp .env.example .env   # optional
 cd infra/docker && docker compose up -d
-# Start: api-gateway, auth-service, clinic-service, patient-service, followup-service
+# Start: api-gateway, auth-service, clinic-service, patient-service, followup-service, notification-service
 ```
 
 ### Frontend

@@ -39,7 +39,7 @@ CareFlow es una plataforma SaaS multi-tenant para consultorios y clínicas priva
 | Componente | Estado | Notas |
 |------------|--------|-------|
 | Docker Compose | ✅ | PostgreSQL + RabbitMQ en `infra/docker/` |
-| PostgreSQL | ✅ | `auth_db` (5433), `patient_db` (5434), `clinic_db` (5435), `followup_db` (5436) |
+| PostgreSQL | ✅ | `auth_db` (5433), `patient_db` (5434), `clinic_db` (5435), `followup_db` (5436), `notification_db` (5437) |
 | RabbitMQ | ✅ | Preparado para notificaciones (fase futura) |
 | Secrets | ✅ | `CAREFLOW_JWT_SECRET`, `CAREFLOW_INTERNAL_API_KEY` vía `.env.example` |
 
@@ -78,6 +78,15 @@ CRUD pacientes scoped por `clinicId` del header.
 ### FollowUp Service (8084)
 
 CRUD follow-ups, pending, complete/cancel, scheduler overdue → MISSED.
+
+### Notification Service (8085)
+
+| Feature | Detalle |
+|---------|---------|
+| RabbitMQ consumer | `followup.scheduled`, `followup.missed` |
+| Canal demo | `WHATSAPP_LINK` (wa.me) |
+| REST | `GET /notifications`, `POST /notifications/{id}/send` |
+| BD | `notification_db` :5437 |
 
 ### Frontend Web App (3000)
 
@@ -155,7 +164,7 @@ Client → Gateway (JWT) → Service (X-Clinic-Id) → query scoped by clinicId
 ### Para demo presentable
 
 1. [x] **Commit frontend** — versionar `frontend/` en `main`
-2. [ ] **Notification Service (Fase 1)** — ver [notification-events.md](../api/notification-events.md)
+2. [x] **Notification Service (Fase 1)** — ver [notification-events.md](../api/notification-events.md)
 3. [ ] **Deploy staging** — URL pública (VPS Linux + Docker)
 
 ### Mejoras posteriores

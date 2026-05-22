@@ -13,6 +13,7 @@ Guía para mostrar el producto en tu máquina (inversor, cliente piloto o revisi
 | Invitar doctor/asistente | ✅ `/team` | Token manual (sin email automático aún) |
 | Aceptar invitación | ✅ `/register-invite` | Pegar token + contraseña |
 | **Alta de consultorio nuevo** | ✅ `/register` | Self-service; crea CLINIC_ADMIN + clínica |
+| Notificaciones al paciente | ✅ `/notifications` | Link WhatsApp (wa.me) al crear/vencer seguimiento |
 | **Demo pública (URL)** | ❌ | Requiere deploy staging (pendiente) |
 
 ## Checklist antes de la demo
@@ -24,9 +25,9 @@ cd infra/docker
 docker compose up -d
 ```
 
-Verificar contenedores: PostgreSQL (5433–5436) y RabbitMQ (5672, management 15672).
+Verificar contenedores: PostgreSQL (5433–5437) y RabbitMQ (5672, management 15672).
 
-### 2. Backend (5 servicios)
+### 2. Backend (6 servicios)
 
 En terminales separadas, desde cada módulo:
 
@@ -37,6 +38,7 @@ En terminales separadas, desde cada módulo:
 | clinic-service | 8083 | `mvn spring-boot:run` |
 | patient-service | 8082 | `mvn spring-boot:run` |
 | followup-service | 8084 | `mvn spring-boot:run` |
+| notification-service | 8085 | `mvn spring-boot:run` |
 
 Variables opcionales (ver `.env.example` en la raíz):
 
@@ -86,8 +88,8 @@ Colección completa: [docs/api/careflow-smoke.postman_collection.json](../api/ca
 2. **Dashboard** — métricas + bloque **Requiere atención** (vencidos, pacientes en riesgo).
 3. **Pacientes** — crear paciente con teléfono y estado “En riesgo”.
 4. **Seguimientos** — programar “Seguimiento post consulta” para mañana; marcar uno como completado.
-5. **Equipo** — invitar doctor; copiar token y abrir `/register-invite` en ventana incógnito.
-6. **Multi-tenant** — mismo backend, datos aislados por clínica (concepto, no pantalla admin).
+5. **Notificaciones** — tras crear seguimiento, ir a `/notifications` → **Abrir WhatsApp** → **Marcar enviada**.
+6. **Equipo** — invitar doctor; copiar token y abrir `/register-invite` en ventana incógnito.
 
 ### Narrativa de producto
 
@@ -110,9 +112,9 @@ El backend sigue usando códigos en inglés (`CLINIC_ADMIN`, `PENDING`, etc.).
 
 ## Limitaciones conocidas (decir en la demo)
 
-- Invitación por **token manual** (WhatsApp/correo propio); no hay envío automático.
+- Invitación staff por **token manual** (email automático pendiente).
+- WhatsApp es **link wa.me** (demo); API oficial pendiente.
 - Todos los roles ven el mismo CRUD clínico (RBAC fino pendiente).
-- Registro de consultorio nuevo **sin pantalla web** (solo API).
 - Sin deploy staging: la demo es **solo local** por ahora.
 - Breve “Cargando sesión…” al entrar (lectura de token en el navegador).
 

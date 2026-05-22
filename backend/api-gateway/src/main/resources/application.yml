@@ -38,6 +38,12 @@ spring:
                 - Path=/api/followups/**
               filters:
                 - StripPrefix=1
+            - id: notification-service
+              uri: http://localhost:8085
+              predicates:
+                - Path=/api/notifications/**
+              filters:
+                - StripPrefix=1
 
 management:
   endpoints:

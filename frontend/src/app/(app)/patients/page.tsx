@@ -13,16 +13,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
 import { formatDate } from "@/lib/utils";
 import { labelPatientStatus, patientStatusLabels } from "@/lib/labels";
+import {
+  defaultPhoneCountry,
+  formatPhoneDisplay,
+  normalizePhone,
+  parsePhone,
+  validateLocalPhone,
+} from "@/lib/phone";
 
-const schema = z.object({
-  fullName: z.string().min(1, "Nombre requerido"),
-  phoneNumber: z.string().min(1, "Teléfono requerido"),
-  diagnosis: z.string().optional(),
-  status: z.enum(["ACTIVE", "AT_RISK", "INACTIVE"]),
-});
+const schema = z
+  .object({
+    fullName: z.string().min(1, "Nombre requerido"),
+    phoneDialCode: z.string().min(1),
+    phoneLocal: z.string().min(1, "Teléfono requerido"),
+    diagnosis: z.string().optional(),
+    status: z.enum(["ACTIVE", "AT_RISK", "INACTIVE"]),
+  })
+  .superRefine((data, ctx) => {
+    const phoneError = validateLocalPhone(data.phoneDialCode, data.phoneLocal);
+    if (phoneError) {
+      ctx.addIssue({ code: "custom", message: phoneError, path: ["phoneLocal"] });
+    }
+  });
 
 type FormData = z.infer<typeof schema>;
 
@@ -35,19 +51,41 @@ export default function PatientsPage() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { fullName: "", phoneNumber: "", diagnosis: "", status: "ACTIVE" },
+    defaultValues: {
+      fullName: "",
+      phoneDialCode: defaultPhoneCountry.dial,
+      phoneLocal: "",
+      diagnosis: "",
+      status: "ACTIVE",
+    },
   });
+
+  const phoneDialCode = form.watch("phoneDialCode");
+  const phoneLocal = form.watch("phoneLocal");
+  const phoneLocalError = form.formState.errors.phoneLocal?.message;
 
   const saveMutation = useMutation({
     mutationFn: async (data: FormData) => {
+      const payload = {
+        fullName: data.fullName,
+        phoneNumber: normalizePhone(data.phoneDialCode, data.phoneLocal),
+        diagnosis: data.diagnosis,
+        status: data.status,
+      };
       if (editing) {
-        return updatePatient(editing.id, data);
+        return updatePatient(editing.id, payload);
       }
-      return createPatient(data);
+      return createPatient(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["patients"] });
-      form.reset({ fullName: "", phoneNumber: "", diagnosis: "", status: "ACTIVE" });
+      form.reset({
+        fullName: "",
+        phoneDialCode: defaultPhoneCountry.dial,
+        phoneLocal: "",
+        diagnosis: "",
+        status: "ACTIVE",
+      });
       setEditing(null);
       setError(null);
     },
@@ -61,12 +99,25 @@ export default function PatientsPage() {
   });
 
   const startEdit = (patient: Patient) => {
+    const parsed = parsePhone(patient.phoneNumber);
     setEditing(patient);
     form.reset({
       fullName: patient.fullName,
-      phoneNumber: patient.phoneNumber,
+      phoneDialCode: parsed.dialCode,
+      phoneLocal: parsed.localNumber,
       diagnosis: patient.diagnosis ?? "",
       status: patient.status,
+    });
+  };
+
+  const resetForm = () => {
+    setEditing(null);
+    form.reset({
+      fullName: "",
+      phoneDialCode: defaultPhoneCountry.dial,
+      phoneLocal: "",
+      diagnosis: "",
+      status: "ACTIVE",
     });
   };
 
@@ -91,8 +142,17 @@ export default function PatientsPage() {
               <Input {...form.register("fullName")} />
             </div>
             <div>
-              <Label>Teléfono</Label>
-              <Input {...form.register("phoneNumber")} />
+              <PhoneInput
+                dialCode={phoneDialCode}
+                localNumber={phoneLocal}
+                onDialCodeChange={(dial) =>
+                  form.setValue("phoneDialCode", dial, { shouldValidate: true })
+                }
+                onLocalNumberChange={(local) =>
+                  form.setValue("phoneLocal", local, { shouldValidate: true })
+                }
+                error={phoneLocalError}
+              />
             </div>
             <div>
               <Label>Diagnóstico</Label>
@@ -115,14 +175,7 @@ export default function PatientsPage() {
                 {editing ? "Guardar cambios" : "Crear paciente"}
               </Button>
               {editing && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setEditing(null);
-                    form.reset({ fullName: "", phoneNumber: "", diagnosis: "", status: "ACTIVE" });
-                  }}
-                >
+                <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
               )}
@@ -151,7 +204,7 @@ export default function PatientsPage() {
               {(patientsQuery.data ?? []).map((patient) => (
                 <tr key={patient.id} className="border-b border-slate-100">
                   <td className="py-3 pr-4 font-medium">{patient.fullName}</td>
-                  <td className="py-3 pr-4">{patient.phoneNumber}</td>
+                  <td className="py-3 pr-4">{formatPhoneDisplay(patient.phoneNumber)}</td>
                   <td className="py-3 pr-4">
                     <Badge label={patient.status} display={labelPatientStatus(patient.status)} />
                   </td>

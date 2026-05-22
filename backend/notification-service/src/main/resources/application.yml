@@ -1,12 +1,12 @@
 server:
-  port: 8084
+  port: 8085
 
 spring:
   application:
-    name: followup-service
+    name: notification-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5436/followup_db
+    url: jdbc:postgresql://localhost:5437/notification_db
     username: careflow
     password: careflow
 
@@ -31,10 +31,8 @@ management:
         include: health,info
 
 careflow:
-  followup:
-    # Marks PENDING follow-ups past scheduledDate as MISSED (every 15 minutes).
-    overdue-check-cron: "0 */15 * * * *"
   rabbitmq:
     exchange: careflow.events
+    queue: notification-service.queue
   patient-service:
     base-url: http://localhost:8082

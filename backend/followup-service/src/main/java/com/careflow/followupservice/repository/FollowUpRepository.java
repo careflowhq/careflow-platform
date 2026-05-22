@@ -20,6 +20,8 @@ public interface FollowUpRepository extends JpaRepository<FollowUp, UUID> {
 
     Optional<FollowUp> findByIdAndClinicId(UUID id, UUID clinicId);
 
+    List<FollowUp> findByStatusAndScheduledDateBefore(FollowUpStatus status, Instant cutoff);
+
     /**
      * Used by the overdue scheduler: transitions all overdue PENDING rows across tenants.
      * Tenant isolation at read-time is enforced by clinicId on each row; the job is system-scoped.
