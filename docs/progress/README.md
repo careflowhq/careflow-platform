@@ -7,6 +7,7 @@ Memoria institucional del proyecto. Actualizar tras cada milestone.
 | Archivo | Propósito |
 |---------|-----------|
 | [progress-log.md](./progress-log.md) | Estado actual, historial, issues, próximos pasos |
+| [../demo/local-demo.md](../demo/local-demo.md) | Guía para demo local (guión + checklist) |
 | [README.md](./README.md) | Este índice |
 
 ## Cuándo actualizar

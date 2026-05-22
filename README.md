@@ -25,20 +25,30 @@ CareFlow helps private clinics automate patient engagement workflows through int
 | **Service ownership** | [docs/architecture/service-ownership.md](docs/architecture/service-ownership.md) |
 | **Platform diagrams** | [docs/architecture/platform-diagram.md](docs/architecture/platform-diagram.md) |
 | **Product** | [docs/product/](docs/product/) |
-| **API specs** | [docs/api/](docs/api/) |
+| **Frontend** | [frontend/README.md](frontend/README.md) |
+| **Demo local** | [docs/demo/local-demo.md](docs/demo/local-demo.md) |
+| **Notification events** | [docs/api/notification-events.md](docs/api/notification-events.md) |
 
 ## Status
 
-MVP backend operational: **auth**, **clinic**, **patient**, **followup**, multi-tenant isolation, staff invitations (DOCTOR/ASSISTANT). See [progress log](docs/progress/progress-log.md).
-
-**Branches:** `main` includes hardening + followup. Staff invitations en `feat/staff-invitations` (pendiente merge).
+MVP **backend + frontend** en local: auth, clinic, patient, followup, invitaciones staff, web app Next.js (UI en español).  
+**Demo:** [guía local](docs/demo/local-demo.md) · Estado: [progress log](docs/progress/progress-log.md)
 
 ## Local run
 
+### Backend
+
 ```bash
-cp .env.example .env   # optional — defaults work for local dev
+cp .env.example .env   # optional
 cd infra/docker && docker compose up -d
 # Start: api-gateway, auth-service, clinic-service, patient-service, followup-service
+```
+
+### Frontend
+
+```bash
+cd frontend && npm install && npm run dev
+# http://localhost:3000
 ```
 
 **Environment variables** (see [.env.example](.env.example)):

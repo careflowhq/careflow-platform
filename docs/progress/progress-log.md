@@ -9,15 +9,16 @@ Documento vivo de **project memory** para sincronizar estado entre sesiones (Cur
 
 ## Última actualización
 
-**Fecha:** 2026-05-21  
-**Sesión:** Staff invitation (DOCTOR/ASSISTANT) + sync documentación institucional  
-**Branch activa:** `feat/staff-invitations` (pendiente merge a `main`)
+**Fecha:** 2026-05-19  
+**Sesión:** Fase 0 — commit frontend MVP + docs demo/onboarding + contrato eventos notificaciones
 
 ---
 
 ## Estado general
 
-CareFlow es una plataforma SaaS multi-tenant para consultorios y clínicas privadas. **Backend MVP operativo** con auth, clinic, patient, followup, hardening de errores/secrets, e **invitación multi-rol** (admin + doctores + asistentes en el mismo `clinicId`).
+CareFlow es una plataforma SaaS multi-tenant para consultorios y clínicas privadas. **Producto usable en local:** backend MVP + web app con login, dashboard, pacientes, seguimientos, equipo e invitaciones.
+
+**Demo local:** [docs/demo/local-demo.md](../demo/local-demo.md)
 
 **Documentación institucional:**
 
@@ -77,6 +78,19 @@ CRUD pacientes scoped por `clinicId` del header.
 ### FollowUp Service (8084)
 
 CRUD follow-ups, pending, complete/cancel, scheduler overdue → MISSED.
+
+### Frontend Web App (3000)
+
+Next.js MVP: login, dashboard, pacientes, seguimientos, equipo (invite). Proxy `/api` → gateway `:8080`.
+
+| Aspecto | Estado |
+|---------|--------|
+| Pantallas MVP | ✅ |
+| UI español LATAM (`labels.ts`) | ✅ roles, estados, tipos seguimiento |
+| AuthGuard hidratación | ✅ evita mismatch SSR/localStorage |
+| Registro consultorio (`/register`) | ✅ |
+| Deploy staging | ❌ |
+| Commit en `main` | ✅ |
 
 ---
 
@@ -138,12 +152,17 @@ Client → Gateway (JWT) → Service (X-Clinic-Id) → query scoped by clinicId
 
 ## Próximos pasos (prioridad sugerida)
 
-1. [ ] **Merge PR** `feat/staff-invitations` → `main`
-2. [ ] **Notification Service** — enviar invite token por email/WhatsApp (RabbitMQ, ADR 0003)
-3. [ ] **Role-based access** — DOCTOR vs ASSISTANT en patient/followup (403 por acción)
-4. [ ] **Frontend Next.js** — login, equipo, pacientes, follow-ups pending
-5. [ ] **Externalizar DB credentials** (prod)
-6. [ ] **ADR 0005** — staff invitation strategy (formalizar decisión)
+### Para demo presentable
+
+1. [x] **Commit frontend** — versionar `frontend/` en `main`
+2. [ ] **Notification Service (Fase 1)** — ver [notification-events.md](../api/notification-events.md)
+3. [ ] **Deploy staging** — URL pública (VPS Linux + Docker)
+
+### Mejoras posteriores
+
+5. [ ] **RBAC clínico** — permisos DOCTOR vs ASSISTANT en UI/API
+6. [ ] **Polish UI** — toasts, skeletons, script arranque local
+7. [ ] Externalizar DB credentials (prod)
 
 ---
 
@@ -161,14 +180,17 @@ Client → Gateway (JWT) → Service (X-Clinic-Id) → query scoped by clinicId
 | 2026-05-20 | FollowUp Service MVP + overdue scheduler | followup-service |
 | 2026-05-20 | Auth 409/401, externalized secrets, smoke tests | auth, gateway, docs |
 | 2026-05-21 | Staff invitation DOCTOR/ASSISTANT | auth-service, api-gateway |
+| 2026-05-21 | Frontend Next.js MVP | frontend |
+| 2026-05-19 | Frontend i18n español + AuthGuard hydration fix | frontend |
+| 2026-05-19 | Fase 0: frontend commit + docs demo + eventos notificaciones | frontend, docs |
 
 ---
 
 ## Notas para próxima sesión
 
 1. Progress log: `docs/progress/progress-log.md`
-2. Register CLINIC_ADMIN requiere: `clinicName`, `country`, `timezone`
-3. Invite requiere JWT de `CLINIC_ADMIN`; compartir `token` de respuesta manualmente
-4. Reiniciar **gateway + auth-service** tras merge de invite (cambio rutas públicas/protegidas)
-5. Postman smoke: `docs/api/careflow-smoke.postman_collection.json` (pasos 3–4 invite)
-6. Siguiente milestone recomendado: **Notification Service** o **RBAC clínico**
+2. Demo local: `docs/demo/local-demo.md`
+3. Register CLINIC_ADMIN: pantalla `/register` (self-service)
+4. Invite requiere JWT de `CLINIC_ADMIN`; compartir `token` manualmente hasta Notification Service
+5. Frontend: `cd frontend && npm run dev` → `:3000`
+6. Siguiente milestone: **Notification Service Fase 1** — [notification-events.md](../api/notification-events.md)
