@@ -9,8 +9,8 @@ Documento vivo de **project memory** para sincronizar estado entre sesiones (Cur
 
 ## Última actualización
 
-**Fecha:** 2026-05-19  
-**Sesión:** Fase 0 — commit frontend MVP + docs demo/onboarding + contrato eventos notificaciones
+**Fecha:** 2026-05-22  
+**Sesión:** Scripts arranque local, volúmenes Postgres, VPS Hetzner, deploy staging Docker Compose
 
 ---
 
@@ -18,7 +18,8 @@ Documento vivo de **project memory** para sincronizar estado entre sesiones (Cur
 
 CareFlow es una plataforma SaaS multi-tenant para consultorios y clínicas privadas. **Producto usable en local:** backend MVP + web app con login, dashboard, pacientes, seguimientos, equipo e invitaciones.
 
-**Demo local:** [docs/demo/local-demo.md](../demo/local-demo.md)
+**Demo local:** [docs/demo/local-demo.md](../demo/local-demo.md)  
+**Deploy / infra:** [docs/deploy/README.md](../deploy/README.md)
 
 **Documentación institucional:**
 
@@ -38,10 +39,16 @@ CareFlow es una plataforma SaaS multi-tenant para consultorios y clínicas priva
 
 | Componente | Estado | Notas |
 |------------|--------|-------|
-| Docker Compose | ✅ | PostgreSQL + RabbitMQ en `infra/docker/` |
-| PostgreSQL | ✅ | `auth_db` (5433), `patient_db` (5434), `clinic_db` (5435), `followup_db` (5436), `notification_db` (5437) |
-| RabbitMQ | ✅ | Preparado para notificaciones (fase futura) |
-| Secrets | ✅ | `CAREFLOW_JWT_SECRET`, `CAREFLOW_INTERNAL_API_KEY` vía `.env.example` |
+| Docker Compose (dev) | ✅ | `infra/docker/docker-compose.yml` — 5 Postgres + RabbitMQ |
+| Volúmenes Postgres (dev) | ✅ | Datos persisten tras `stop-local` |
+| Scripts arranque local | ✅ | `scripts/start-local.*` — gateway al final + wait ports |
+| VPS Hetzner staging | ✅ | CPX32, `178.105.118.30` — [hetzner-vps-setup.md](../deploy/hetzner-vps-setup.md) |
+| Docker Compose (staging) | ✅ | `docker-compose.staging.yml` + Nginx |
+| Deploy staging script | ✅ | `scripts/deploy-staging.sh` |
+| HTTPS / dominio | ❌ | Pendiente Certbot |
+| PostgreSQL | ✅ | Dev :5433–5437; Staging: 1 instancia, 5 DB |
+| RabbitMQ | ✅ | Dev :15672 UI; staging solo red interna |
+| Secrets | ✅ | `.env.example` local; `.env.staging.example` VPS |
 
 ---
 
@@ -98,7 +105,7 @@ Next.js MVP: login, dashboard, pacientes, seguimientos, equipo (invite). Proxy `
 | UI español LATAM (`labels.ts`) | ✅ roles, estados, tipos seguimiento |
 | AuthGuard hidratación | ✅ evita mismatch SSR/localStorage |
 | Registro consultorio (`/register`) | ✅ |
-| Deploy staging | ❌ |
+| Deploy staging | 🟡 | Infra + docs listos; deploy en VPS pendiente de ejecutar |
 | Commit en `main` | ✅ |
 
 ---
@@ -151,9 +158,13 @@ Client → Gateway (JWT) → Service (X-Clinic-Id) → query scoped by clinicId
 
 | Issue | Fix |
 |-------|-----|
+| PowerShell script parse error | Quitar Unicode `—`, usar comillas simples en `start-local.ps1` |
+| Gateway 500 al arrancar script | Iniciar microservicios antes que gateway + wait ports |
+| Datos borrados tras `docker compose down` | Volúmenes nombrados en `docker-compose.yml` |
+| Login falla tras reinicio Docker | DB vacía → re-registrar en `/register` |
+| `deploy` sin permiso Docker | `usermod -aG docker deploy` + re-login SSH |
 | 403 en `/api/auth/**` | `StripPrefix=1` en gateway |
 | 500 JWT clinicId | Parser String → UUID en gateway |
-| 500 login/register duplicado | Exception handler 401/409 |
 | clinicId random en register | Integración auth → clinic-service |
 | Solo 1 usuario por clínica | Staff invitation flow |
 
@@ -165,12 +176,15 @@ Client → Gateway (JWT) → Service (X-Clinic-Id) → query scoped by clinicId
 
 1. [x] **Commit frontend** — versionar `frontend/` en `main`
 2. [x] **Notification Service (Fase 1)** — ver [notification-events.md](../api/notification-events.md)
-3. [ ] **Deploy staging** — URL pública (VPS Linux + Docker)
+3. [x] **Scripts arranque local** — `scripts/start-local.*`, volúmenes Postgres
+4. [x] **Infra deploy staging** — Docker Compose + Nginx + docs
+5. [ ] **Deploy staging en VPS** — ejecutar `./scripts/deploy-staging.sh` en `178.105.118.30`
+6. [ ] **HTTPS** — dominio + Certbot
 
 ### Mejoras posteriores
 
 5. [ ] **RBAC clínico** — permisos DOCTOR vs ASSISTANT en UI/API
-6. [ ] **Polish UI** — toasts, skeletons, script arranque local
+6. [ ] **Polish UI** — toasts, skeletons
 7. [ ] Externalizar DB credentials (prod)
 
 ---
@@ -192,6 +206,10 @@ Client → Gateway (JWT) → Service (X-Clinic-Id) → query scoped by clinicId
 | 2026-05-21 | Frontend Next.js MVP | frontend |
 | 2026-05-19 | Frontend i18n español + AuthGuard hydration fix | frontend |
 | 2026-05-19 | Fase 0: frontend commit + docs demo + eventos notificaciones | frontend, docs |
+| 2026-05-19 | Fase 1: notification-service + RabbitMQ + UI notificaciones | backend, frontend |
+| 2026-05-22 | Scripts arranque local + volúmenes Postgres + fix gateway order | scripts, infra |
+| 2026-05-22 | VPS Hetzner provisionado + bootstrap Docker/deploy user | ops |
+| 2026-05-22 | docker-compose.staging.yml + Nginx + deploy docs | infra, docs |
 
 ---
 
@@ -199,7 +217,6 @@ Client → Gateway (JWT) → Service (X-Clinic-Id) → query scoped by clinicId
 
 1. Progress log: `docs/progress/progress-log.md`
 2. Demo local: `docs/demo/local-demo.md`
-3. Register CLINIC_ADMIN: pantalla `/register` (self-service)
-4. Invite requiere JWT de `CLINIC_ADMIN`; compartir `token` manualmente hasta Notification Service
-5. Frontend: `cd frontend && npm run dev` → `:3000`
-6. Siguiente milestone: **Notification Service Fase 1** — [notification-events.md](../api/notification-events.md)
+3. Deploy docs: `docs/deploy/README.md`
+4. VPS: `ssh deploy@178.105.118.30` → `./scripts/deploy-staging.sh`
+5. Siguiente: ejecutar deploy staging + HTTPS con dominio

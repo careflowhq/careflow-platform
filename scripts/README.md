@@ -1,5 +1,7 @@
 # CareFlow — scripts de arranque local
 
+Documentación completa: [docs/deploy/local-development.md](../docs/deploy/local-development.md)
+
 ## Windows (desarrollo)
 
 ```powershell
@@ -57,4 +59,7 @@ docker compose down -v
 
 ## VPS (staging)
 
-Deploy en producción/staging: `docs/deploy/staging-vps.md` y `./scripts/deploy-staging.sh`.
+- Provisión servidor: [docs/deploy/hetzner-vps-setup.md](../docs/deploy/hetzner-vps-setup.md)
+- Deploy aplicación: [docs/deploy/staging-vps.md](../docs/deploy/staging-vps.md)
+- Índice: [docs/deploy/README.md](../docs/deploy/README.md)
+- Script: `./scripts/deploy-staging.sh`
