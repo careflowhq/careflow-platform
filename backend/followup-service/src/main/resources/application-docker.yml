@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/followup_db
+  rabbitmq:
+    host: rabbitmq
+  jpa:
+    show-sql: false
+
+careflow:
+  patient-service:
+    base-url: http://patient-service:8082

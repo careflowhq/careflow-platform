@@ -55,4 +55,6 @@ cd infra\docker
 docker compose down -v
 ```
 
-El deploy en producción usará Docker Compose completo (distinto a este arranque dev). Ver `docs/deploy/` (pendiente).
+## VPS (staging)
+
+Deploy en producción/staging: `docs/deploy/staging-vps.md` y `./scripts/deploy-staging.sh`.

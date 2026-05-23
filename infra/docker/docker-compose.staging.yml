@@ -1,0 +1,224 @@
+# CareFlow staging — full stack for VPS (8 GB RAM)
+# Usage (from infra/docker):
+#   cp .env.staging.example .env   # edit secrets
+#   docker compose -f docker-compose.staging.yml up -d --build
+
+name: careflow-staging
+
+volumes:
+  postgres-data:
+
+networks:
+  careflow:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: careflow-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-careflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-careflow}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    networks:
+      - careflow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-careflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: careflow-rabbitmq
+    networks:
+      - careflow
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  auth-service:
+    build:
+      context: ../../backend/auth-service
+      dockerfile: ../../infra/docker/Dockerfile.spring-service
+    container_name: careflow-auth
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CAREFLOW_JWT_SECRET: ${CAREFLOW_JWT_SECRET}
+      CAREFLOW_INTERNAL_API_KEY: ${CAREFLOW_INTERNAL_API_KEY}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-careflow}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-careflow}
+      JAVA_OPTS: -Xms128m -Xmx384m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - careflow
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  clinic-service:
+    build:
+      context: ../../backend/clinic-service
+      dockerfile: ../../infra/docker/Dockerfile.spring-service
+    container_name: careflow-clinic
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CAREFLOW_INTERNAL_API_KEY: ${CAREFLOW_INTERNAL_API_KEY}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-careflow}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-careflow}
+      JAVA_OPTS: -Xms128m -Xmx384m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - careflow
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  patient-service:
+    build:
+      context: ../../backend/patient-service
+      dockerfile: ../../infra/docker/Dockerfile.spring-service
+    container_name: careflow-patient
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-careflow}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-careflow}
+      JAVA_OPTS: -Xms128m -Xmx384m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - careflow
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  followup-service:
+    build:
+      context: ../../backend/followup-service
+      dockerfile: ../../infra/docker/Dockerfile.spring-service
+    container_name: careflow-followup
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-careflow}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-careflow}
+      JAVA_OPTS: -Xms128m -Xmx384m
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      patient-service:
+        condition: service_started
+    networks:
+      - careflow
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  notification-service:
+    build:
+      context: ../../backend/notification-service
+      dockerfile: ../../infra/docker/Dockerfile.spring-service
+    container_name: careflow-notification
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-careflow}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-careflow}
+      JAVA_OPTS: -Xms128m -Xmx384m
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      patient-service:
+        condition: service_started
+    networks:
+      - careflow
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  api-gateway:
+    build:
+      context: ../../backend/api-gateway
+      dockerfile: ../../infra/docker/Dockerfile.spring-service
+    container_name: careflow-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      CAREFLOW_JWT_SECRET: ${CAREFLOW_JWT_SECRET}
+      JAVA_OPTS: -Xms128m -Xmx384m
+    depends_on:
+      auth-service:
+        condition: service_started
+      patient-service:
+        condition: service_started
+      clinic-service:
+        condition: service_started
+      followup-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+    networks:
+      - careflow
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+      args:
+        API_GATEWAY_URL: http://api-gateway:8080
+    container_name: careflow-frontend
+    environment:
+      API_GATEWAY_URL: http://api-gateway:8080
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - careflow
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: careflow-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - api-gateway
+    networks:
+      - careflow
+    deploy:
+      resources:
+        limits:
+          memory: 128M

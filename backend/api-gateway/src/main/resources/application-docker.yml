@@ -1,0 +1,36 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: http://auth-service:8081
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+            - id: patient-service
+              uri: http://patient-service:8082
+              predicates:
+                - Path=/api/patients/**
+              filters:
+                - StripPrefix=1
+            - id: clinic-service
+              uri: http://clinic-service:8083
+              predicates:
+                - Path=/api/clinics/**
+              filters:
+                - StripPrefix=1
+            - id: followup-service
+              uri: http://followup-service:8084
+              predicates:
+                - Path=/api/followups/**
+              filters:
+                - StripPrefix=1
+            - id: notification-service
+              uri: http://notification-service:8085
+              predicates:
+                - Path=/api/notifications/**
+              filters:
+                - StripPrefix=1
