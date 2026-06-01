@@ -27,6 +27,7 @@ replay_pid*
 .env
 infra/docker/.env
 logs/
+infra/docker/certbot/conf/
 
 # Maven / IDE
 target/

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # CareFlow — Let's Encrypt SSL para staging (careflowhq.org)
+# No requiere sudo: usa imagen certbot/certbot via Docker.
 # Uso en VPS:
 #   export CERTBOT_EMAIL="tu@email.com"
 #   ./scripts/setup-ssl.sh
@@ -9,6 +10,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 COMPOSE_DIR="$ROOT/infra/docker"
 WEBROOT="$COMPOSE_DIR/certbot/www"
+CERT_DIR="$COMPOSE_DIR/certbot/conf"
 PRIMARY_DOMAIN="${CAREFLOW_PRIMARY_DOMAIN:-app.careflowhq.org}"
 ROOT_DOMAIN="${CAREFLOW_ROOT_DOMAIN:-careflowhq.org}"
 SERVER_IP="${CAREFLOW_SERVER_IP:-178.105.118.30}"
@@ -19,7 +21,7 @@ if [[ -z "${CERTBOT_EMAIL:-}" ]]; then
   exit 1
 fi
 
-mkdir -p "$WEBROOT"
+mkdir -p "$WEBROOT" "$CERT_DIR"
 
 echo "==> Comprobando DNS (debe apuntar a $SERVER_IP)..."
 for host in "$PRIMARY_DOMAIN" "$ROOT_DOMAIN" "www.$ROOT_DOMAIN"; do
@@ -40,15 +42,12 @@ cd "$COMPOSE_DIR"
 echo "==> Reiniciando nginx (HTTP + webroot ACME)..."
 docker compose -f docker-compose.staging.yml up -d nginx
 
-echo "==> Instalando certbot si falta..."
-if ! command -v certbot >/dev/null 2>&1; then
-  sudo apt-get update -qq
-  sudo apt-get install -y certbot
-fi
-
-echo "==> Solicitando certificado Let's Encrypt..."
-sudo certbot certonly --webroot \
-  -w "$WEBROOT" \
+echo "==> Solicitando certificado Let's Encrypt (Docker certbot)..."
+docker run --rm \
+  -v "$CERT_DIR:/etc/letsencrypt" \
+  -v "$WEBROOT:/var/www/certbot" \
+  certbot/certbot certonly --webroot \
+  -w /var/www/certbot \
   -d "$PRIMARY_DOMAIN" \
   -d "$ROOT_DOMAIN" \
   -d "www.$ROOT_DOMAIN" \
@@ -67,5 +66,5 @@ echo "Listo. Prueba:"
 echo "  https://$PRIMARY_DOMAIN"
 echo "  https://$ROOT_DOMAIN"
 echo ""
-echo "Renovación automática (opcional, crontab root):"
-echo "  0 3 * * * certbot renew --quiet && docker compose -f $COMPOSE_DIR/docker-compose.staging.yml exec -T nginx nginx -s reload"
+echo "Renovación (cron usuario deploy):"
+echo "  0 3 * * * $ROOT/scripts/renew-ssl.sh >> ~/careflow-ssl-renew.log 2>&1"

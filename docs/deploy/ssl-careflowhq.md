@@ -55,6 +55,8 @@ docker compose -f docker-compose.staging.yml up -d nginx
 
 ## Paso 3 — Emitir certificado
 
+No requiere `sudo` — Certbot corre en Docker y guarda certs en `infra/docker/certbot/conf/`.
+
 ```bash
 cd ~/careflow-platform
 export CERTBOT_EMAIL="tu-email@ejemplo.com"
@@ -81,16 +83,16 @@ Login, registro y API `/api/*` deben funcionar con candado verde.
 
 ## Renovación automática
 
-Certbot renueva certs ~90 días. Cron sugerido (como root en VPS):
+Certbot renueva certs ~90 días. Cron sugerido (usuario **deploy**, sin sudo):
 
 ```bash
-sudo crontab -e
+crontab -e
 ```
 
 Añadir:
 
 ```
-0 3 * * * /home/deploy/careflow-platform/scripts/renew-ssl.sh >> /var/log/careflow-ssl-renew.log 2>&1
+0 3 * * * /home/deploy/careflow-platform/scripts/renew-ssl.sh >> /home/deploy/careflow-ssl-renew.log 2>&1
 ```
 
 ---
