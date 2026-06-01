@@ -162,16 +162,16 @@ git pull
 ./scripts/deploy-staging.sh
 ```
 
-## HTTPS con dominio (próximo paso)
+## HTTPS — careflowhq.org
 
-1. Registro DNS **A** → `178.105.118.30`
-2. Instalar Certbot en el host o extender Nginx
-3. Actualizar `infra/docker/nginx/default.conf`:
-   - `server_name app.tudominio.com;`
-   - Bloque SSL `:443`
-4. Renovar certificados automáticamente
+Dominio: **careflowhq.org** · App: **https://app.careflowhq.org**
 
-Opcional: subdominios separados `app.` (frontend) y `api.` (gateway directo).
+Guía paso a paso: [ssl-careflowhq.md](./ssl-careflowhq.md)
+
+```bash
+export CERTBOT_EMAIL="tu@email.com"
+./scripts/setup-ssl.sh
+```
 
 ## Troubleshooting
 

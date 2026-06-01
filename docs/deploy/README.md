@@ -7,13 +7,14 @@ Documentación de entornos: desarrollo local, staging en VPS y decisiones de inf
 | [local-development.md](./local-development.md) | Scripts de arranque, Docker local, persistencia de datos |
 | [hetzner-vps-setup.md](./hetzner-vps-setup.md) | Provisión del servidor Hetzner, SSH, firewall, bootstrap |
 | [staging-vps.md](./staging-vps.md) | Deploy del stack completo con Docker Compose |
+| [ssl-careflowhq.md](./ssl-careflowhq.md) | HTTPS Let's Encrypt para careflowhq.org |
 
 ## Resumen de entornos
 
 | Entorno | Dónde corre | Compose / script | URL |
 |---------|-------------|------------------|-----|
 | **Local (dev)** | Windows / Linux dev | `infra/docker/docker-compose.yml` + `scripts/start-local.*` | http://localhost:3000 |
-| **Staging (VPS)** | Hetzner CPX32 | `infra/docker/docker-compose.staging.yml` + `scripts/deploy-staging.sh` | http://178.105.118.30 |
+| **Staging (VPS)** | Hetzner CPX32 | `infra/docker/docker-compose.staging.yml` + `scripts/deploy-staging.sh` | https://app.careflowhq.org |
 
 ## Archivos clave en el repo
 
