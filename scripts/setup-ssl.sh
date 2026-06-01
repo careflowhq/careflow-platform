@@ -56,15 +56,30 @@ docker run --rm \
   --non-interactive \
   --keep-until-expiring
 
+# Certbot crea archivos como root; nginx debe poder leerlos (sin sudo en el host).
+fix_cert_permissions() {
+  docker run --rm -v "$CERT_DIR:/etc/letsencrypt" alpine sh -c \
+    "chmod -R a+rX /etc/letsencrypt/live /etc/letsencrypt/archive && \
+     chmod a+r /etc/letsencrypt/archive/${PRIMARY_DOMAIN}/privkey1.pem 2>/dev/null || true"
+}
+fix_cert_permissions
+
 echo "==> Activando configuración HTTPS..."
 cp "$COMPOSE_DIR/nginx/default.ssl.conf" "$COMPOSE_DIR/nginx/default.conf"
 
 docker compose -f docker-compose.staging.yml up -d nginx
+
+echo "==> Verificando HTTPS local..."
+if curl -fsSk "https://127.0.0.1" -o /dev/null -H "Host: $PRIMARY_DOMAIN"; then
+  echo "    HTTPS OK"
+else
+  echo "!! HTTPS local falló. Revisa: docker compose -f $COMPOSE_DIR/docker-compose.staging.yml logs nginx --tail=20"
+fi
 
 echo ""
 echo "Listo. Prueba:"
 echo "  https://$PRIMARY_DOMAIN"
 echo "  https://$ROOT_DOMAIN"
 echo ""
-echo "Renovación (cron usuario deploy):"
-echo "  0 3 * * * $ROOT/scripts/renew-ssl.sh >> ~/careflow-ssl-renew.log 2>&1"
+echo "==> Instalando renovación automática (cron)..."
+"$ROOT/scripts/install-ssl-renew-cron.sh"

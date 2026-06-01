@@ -9,8 +9,8 @@ Documento vivo de **project memory** para sincronizar estado entre sesiones (Cur
 
 ## Última actualización
 
-**Fecha:** 2026-05-22  
-**Sesión:** Scripts arranque local, volúmenes Postgres, VPS Hetzner, deploy staging Docker Compose
+**Fecha:** 2026-05-19  
+**Sesión:** SSL Let's Encrypt en staging (app + raíz), docs deploy actualizadas
 
 ---
 
@@ -45,7 +45,7 @@ CareFlow es una plataforma SaaS multi-tenant para consultorios y clínicas priva
 | VPS Hetzner staging | ✅ | CPX32, `178.105.118.30` — [hetzner-vps-setup.md](../deploy/hetzner-vps-setup.md) |
 | Docker Compose (staging) | ✅ | `docker-compose.staging.yml` + Nginx |
 | Deploy staging script | ✅ | `scripts/deploy-staging.sh` |
-| HTTPS / dominio | ❌ | Pendiente Certbot |
+| HTTPS / dominio | ✅ | Let's Encrypt — app.careflowhq.org + careflowhq.org + www |
 | PostgreSQL | ✅ | Dev :5433–5437; Staging: 1 instancia, 5 DB |
 | RabbitMQ | ✅ | Dev :15672 UI; staging solo red interna |
 | Secrets | ✅ | `.env.example` local; `.env.staging.example` VPS |

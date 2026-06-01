@@ -126,10 +126,13 @@ docker compose -f docker-compose.staging.yml ps
 docker compose -f docker-compose.staging.yml logs -f nginx
 ```
 
-Navegador: **http://178.105.118.30**
+Navegador (HTTPS recomendado):
 
-- Registro: `/register`
-- Login: `/login`
+- **https://app.careflowhq.org** — URL principal
+- **https://careflowhq.org** — misma app en dominio raíz
+- Registro: `/register` · Login: `/login`
+
+Fallback HTTP por IP (sin certificado): **http://178.105.118.30**
 
 ## Comandos útiles
 
@@ -164,13 +167,21 @@ git pull
 
 ## HTTPS — careflowhq.org
 
-Dominio: **careflowhq.org** · App: **https://app.careflowhq.org**
+**Activo.** Certificado Let's Encrypt cubre `app.careflowhq.org`, `careflowhq.org` y `www.careflowhq.org`.
 
-Guía paso a paso: [ssl-careflowhq.md](./ssl-careflowhq.md)
+| URL | Notas |
+|-----|-------|
+| https://app.careflowhq.org | Recomendada para demo y uso diario |
+| https://careflowhq.org | Raíz — misma aplicación |
+| https://www.careflowhq.org | Alias |
+
+Guía completa (DNS, setup, renovación, troubleshooting): [ssl-careflowhq.md](./ssl-careflowhq.md)
 
 ```bash
 export CERTBOT_EMAIL="tu@email.com"
-./scripts/setup-ssl.sh
+./scripts/setup-ssl.sh   # instala cron de renovación al final
+# o solo cron:
+./scripts/install-ssl-renew-cron.sh
 ```
 
 ## Troubleshooting

@@ -14,7 +14,7 @@ Documentación de entornos: desarrollo local, staging en VPS y decisiones de inf
 | Entorno | Dónde corre | Compose / script | URL |
 |---------|-------------|------------------|-----|
 | **Local (dev)** | Windows / Linux dev | `infra/docker/docker-compose.yml` + `scripts/start-local.*` | http://localhost:3000 |
-| **Staging (VPS)** | Hetzner CPX32 | `infra/docker/docker-compose.staging.yml` + `scripts/deploy-staging.sh` | https://app.careflowhq.org |
+| **Staging (VPS)** | Hetzner CPX32 | `infra/docker/docker-compose.staging.yml` + `scripts/deploy-staging.sh` | https://app.careflowhq.org · https://careflowhq.org |
 
 ## Archivos clave en el repo
 
