@@ -80,7 +80,7 @@ Arquitectura de **microservicios** con:
 | **Entorno local** | Funcional con scripts `start-local.*` + Docker infra |
 | **Staging** | Desplegado en VPS Hetzner (`178.105.118.30`), HTTPS activo (`app.careflowhq.org`, `careflowhq.org`) |
 | **Tests automatizados** | Limitados — integración en auth-service y api-gateway; smoke tests en resto |
-| **Migraciones BD** | No implementadas (Hibernate `ddl-auto: update`) |
+| **Migraciones BD** | Flyway v1 baseline por servicio; `ddl-auto: validate` |
 | **Observabilidad** | Actuator health/info únicamente |
 | **Documentación** | Extensa en `docs/` (ADRs, data model, deploy, API, progress log) |
 | **Deuda técnica principal** | Duplicación multi-tenant, `shared-libs` vacío, RBAC parcial, schema sin versionar |
@@ -409,11 +409,15 @@ En staging, Nginx enruta `/api/` directamente al gateway; el frontend usa rewrit
 
 **ORM:** Spring Data JPA con Hibernate en todos los servicios con persistencia.
 
-**Migraciones:** **No existen.** No hay Flyway ni Liquibase. Schema gestionado con:
+**Migraciones:** **Flyway** (Sprint 2). Cada servicio JPA tiene `db/migration/V1__baseline.sql`. Configuración:
 
 ```yaml
-spring.jpa.hibernate.ddl-auto: update
+spring.jpa.hibernate.ddl-auto: validate
+spring.flyway.baseline-on-migrate: true
+spring.flyway.baseline-version: 1
 ```
+
+Ver `docs/architecture/database-migrations.md`.
 
 ## Tablas principales y relaciones
 
@@ -963,7 +967,7 @@ OverdueFollowUpScheduler (@Scheduled cron cada 15 min)
 | Renovación SSL automática | ✅ Implementado | Cron diario 03:00 UTC |
 | RBAC granular DOCTOR/ASSISTANT | ❌ No implementado | Todos acceden CRUD clínico |
 | PLATFORM_ADMIN operativo | 🟡 Parcial | Enum existe, sin seed/UI |
-| Migraciones BD versionadas | ❌ No implementado | ddl-auto: update |
+| Migraciones BD versionadas | ✅ Implementado (Sprint 2) | Flyway V1 baseline + validate |
 | shared-libs | ❌ Vacío | ADR 0004 no ejecutado |
 | Refresh token | ❌ No implementado | — |
 | Middleware Next.js auth | ❌ No implementado | Solo AuthGuard client-side |
