@@ -1,13 +1,40 @@
+# syntax=docker/dockerfile:1
+# Generic multi-stage build for CareFlow Spring Boot microservices.
+# Build context: backend/<service-name>/
+# Args: SERVICE_PORT, SERVICE_NAME, BUILD_VERSION (set from docker-compose).
+
 FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /build
+
 COPY pom.xml .
+RUN mvn -q dependency:go-offline -DskipTests || true
+
 COPY src ./src
 RUN mvn -q package -DskipTests
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-alpine AS runtime
+
+ARG SERVICE_PORT=8080
+ARG SERVICE_NAME=careflow-service
+ARG BUILD_VERSION=0.0.1-SNAPSHOT
+
+LABEL org.opencontainers.image.title="CareFlow ${SERVICE_NAME}"
+LABEL org.opencontainers.image.version="${BUILD_VERSION}"
+LABEL org.opencontainers.image.vendor="CareFlow HQ"
+LABEL careflow.service="${SERVICE_NAME}"
+
 WORKDIR /app
-RUN addgroup -S careflow && adduser -S careflow -G careflow
-COPY --from=build /build/target/*.jar app.jar
+
+RUN addgroup -S careflow && adduser -S careflow -G careflow \
+    && apk add --no-cache wget \
+    && chown -R careflow:careflow /app
+
+COPY --from=build --chown=careflow:careflow /build/target/*.jar app.jar
+
 USER careflow
+
 ENV JAVA_OPTS="-Xms128m -Xmx384m"
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
+EXPOSE ${SERVICE_PORT}
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

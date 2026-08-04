@@ -50,9 +50,14 @@ services:
           memory: 384M
 
   auth-service:
+    image: careflow/auth-service:${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     build:
       context: ../../backend/auth-service
       dockerfile: ../../infra/docker/Dockerfile.spring-service
+      args:
+        SERVICE_PORT: 8081
+        SERVICE_NAME: auth-service
+        BUILD_VERSION: ${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     container_name: careflow-auth
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -64,6 +69,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
     networks:
       - careflow
     deploy:
@@ -72,9 +83,14 @@ services:
           memory: 512M
 
   clinic-service:
+    image: careflow/clinic-service:${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     build:
       context: ../../backend/clinic-service
       dockerfile: ../../infra/docker/Dockerfile.spring-service
+      args:
+        SERVICE_PORT: 8083
+        SERVICE_NAME: clinic-service
+        BUILD_VERSION: ${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     container_name: careflow-clinic
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -85,6 +101,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
     networks:
       - careflow
     deploy:
@@ -93,9 +115,14 @@ services:
           memory: 512M
 
   patient-service:
+    image: careflow/patient-service:${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     build:
       context: ../../backend/patient-service
       dockerfile: ../../infra/docker/Dockerfile.spring-service
+      args:
+        SERVICE_PORT: 8082
+        SERVICE_NAME: patient-service
+        BUILD_VERSION: ${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     container_name: careflow-patient
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -105,6 +132,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
     networks:
       - careflow
     deploy:
@@ -113,9 +146,14 @@ services:
           memory: 512M
 
   followup-service:
+    image: careflow/followup-service:${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     build:
       context: ../../backend/followup-service
       dockerfile: ../../infra/docker/Dockerfile.spring-service
+      args:
+        SERVICE_PORT: 8084
+        SERVICE_NAME: followup-service
+        BUILD_VERSION: ${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     container_name: careflow-followup
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -129,6 +167,12 @@ services:
         condition: service_healthy
       patient-service:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
     networks:
       - careflow
     deploy:
@@ -137,9 +181,14 @@ services:
           memory: 512M
 
   notification-service:
+    image: careflow/notification-service:${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     build:
       context: ../../backend/notification-service
       dockerfile: ../../infra/docker/Dockerfile.spring-service
+      args:
+        SERVICE_PORT: 8085
+        SERVICE_NAME: notification-service
+        BUILD_VERSION: ${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     container_name: careflow-notification
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -153,6 +202,12 @@ services:
         condition: service_healthy
       patient-service:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
     networks:
       - careflow
     deploy:
@@ -161,9 +216,14 @@ services:
           memory: 512M
 
   api-gateway:
+    image: careflow/api-gateway:${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     build:
       context: ../../backend/api-gateway
       dockerfile: ../../infra/docker/Dockerfile.spring-service
+      args:
+        SERVICE_PORT: 8080
+        SERVICE_NAME: api-gateway
+        BUILD_VERSION: ${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     container_name: careflow-gateway
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -180,6 +240,12 @@ services:
         condition: service_started
       notification-service:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
     networks:
       - careflow
     deploy:
@@ -188,17 +254,25 @@ services:
           memory: 512M
 
   frontend:
+    image: careflow/frontend:${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     build:
       context: ../../frontend
       dockerfile: Dockerfile
       args:
         API_GATEWAY_URL: http://api-gateway:8080
+        BUILD_VERSION: ${CAREFLOW_VERSION:-0.0.1-SNAPSHOT}
     container_name: careflow-frontend
     environment:
       API_GATEWAY_URL: http://api-gateway:8080
     depends_on:
       api-gateway:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - careflow
     deploy:

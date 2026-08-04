@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
@@ -13,12 +14,25 @@ RUN npm run build
 
 FROM node:20-alpine AS run
 WORKDIR /app
+
+ARG BUILD_VERSION=0.0.1-SNAPSHOT
+
+LABEL org.opencontainers.image.title="CareFlow frontend"
+LABEL org.opencontainers.image.version="${BUILD_VERSION}"
+LABEL org.opencontainers.image.vendor="CareFlow HQ"
+LABEL careflow.service="frontend"
+
 ENV NODE_ENV=production
-RUN addgroup -S careflow && adduser -S careflow -G careflow
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+
+RUN addgroup -S careflow && adduser -S careflow -G careflow \
+    && apk add --no-cache wget
+
 COPY --from=build /app/public ./public
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/package.json ./package.json
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build --chown=careflow:careflow /app/.next/standalone ./
+COPY --from=build --chown=careflow:careflow /app/.next/static ./.next/static
+
 USER careflow
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["node", "server.js"]
