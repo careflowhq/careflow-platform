@@ -1,0 +1,24 @@
+# CareFlow local Kubernetes cluster (Kind)
+# Usage: kind create cluster --config infra/kind/careflow-kind.yaml
+#
+# Port 8088 on the host maps to port 80 on the node (for Ingress in Sprint 3.4).
+# This avoids conflicting with Docker Compose nginx on :80.
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: careflow-local
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 8088
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 8443
+        protocol: TCP
