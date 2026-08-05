@@ -8,6 +8,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLUSTER_NAME="careflow-local"
 IMAGE="careflow/auth-service:0.0.1-SNAPSHOT"
 K8S_APP="$ROOT/infra/kubernetes/apps/auth-service"
+K8S_SECRETS="$ROOT/infra/kubernetes/apps/secrets.yaml"
 
 if ! kind get clusters 2>/dev/null | grep -qx "$CLUSTER_NAME"; then
   echo "!! Cluster '$CLUSTER_NAME' not found. Run ./scripts/kind-up.sh first."
@@ -25,6 +26,7 @@ echo "==> Loading image into Kind cluster..."
 kind load docker-image "$IMAGE" --name "$CLUSTER_NAME"
 
 echo "==> Deploying auth-service..."
+kubectl apply -f "$K8S_SECRETS"
 kubectl apply -k "$K8S_APP"
 
 echo "==> Waiting for auth-service..."

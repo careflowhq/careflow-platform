@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: careflow
+
+resources:
+  - secrets.yaml
+  - auth-service
+  - clinic-service
+  - patient-service
+  - followup-service
+  - notification-service
+  - api-gateway

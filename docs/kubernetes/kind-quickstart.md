@@ -149,17 +149,39 @@ kubectl rollout restart -n careflow deploy/postgres
 
 ## Siguiente fase (3.2)
 
-Desplegar `auth-service` como primer microservicio:
+Desplegar solo `auth-service` (primer microservicio):
 
 ```powershell
 .\scripts\kind-deploy-auth.ps1
 ```
 
+## Fase 3.3 — backend completo
+
+Despliega todos los microservicios backend + `api-gateway`:
+
+```powershell
+.\scripts\kind-deploy-apps.ps1
+```
+
+Linux / Git Bash:
+
+```bash
+./scripts/kind-deploy-apps.sh
+```
+
+Orden de arranque (init containers + waits):
+
+1. `auth-service`, `clinic-service`, `patient-service` (Postgres)
+2. `followup-service`, `notification-service` (Postgres + RabbitMQ + patient)
+3. `api-gateway` (espera health UP de todos los backends)
+
+Secret compartido: `infra/kubernetes/apps/secrets.yaml` (`careflow-app-secrets`).
+
 Verifica con port-forward:
 
 ```powershell
-kubectl port-forward -n careflow svc/auth-service 8081:8081
-curl http://localhost:8081/actuator/health
+kubectl port-forward -n careflow svc/api-gateway 8080:8080
+curl http://localhost:8080/actuator/health
 ```
 
-## Siguiente fase (3.3)
+## Siguiente fase (3.4)

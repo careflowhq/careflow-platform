@@ -7,6 +7,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 $ClusterName = "careflow-local"
 $Image = "careflow/auth-service:0.0.1-SNAPSHOT"
 $K8sApp = Join-Path $Root "infra\kubernetes\apps\auth-service"
+$K8sSecrets = Join-Path $Root "infra\kubernetes\apps\secrets.yaml"
 
 function Resolve-KindExecutable {
     if ($env:KIND_BIN -and (Test-Path $env:KIND_BIN)) {
@@ -46,6 +47,8 @@ Write-Host "==> Loading image into Kind cluster..." -ForegroundColor Green
 if ($LASTEXITCODE -ne 0) { throw "kind load docker-image failed" }
 
 Write-Host "==> Deploying auth-service..." -ForegroundColor Green
+kubectl apply -f $K8sSecrets
+if ($LASTEXITCODE -ne 0) { throw "kubectl apply secrets failed" }
 kubectl apply -k $K8sApp
 if ($LASTEXITCODE -ne 0) { throw "kubectl apply failed" }
 

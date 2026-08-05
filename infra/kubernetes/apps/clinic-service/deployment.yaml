@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-service
+  name: clinic-service
   labels:
-    app.kubernetes.io/name: auth-service
+    app.kubernetes.io/name: clinic-service
     app.kubernetes.io/part-of: careflow-platform
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: auth-service
+      app.kubernetes.io/name: clinic-service
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: auth-service
+        app.kubernetes.io/name: clinic-service
         app.kubernetes.io/part-of: careflow-platform
     spec:
       tolerations:
@@ -38,11 +38,11 @@ spec:
                 sleep 2
               done
       containers:
-        - name: auth-service
-          image: careflow/auth-service:0.0.1-SNAPSHOT
+        - name: clinic-service
+          image: careflow/clinic-service:0.0.1-SNAPSHOT
           imagePullPolicy: Never
           ports:
-            - containerPort: 8081
+            - containerPort: 8083
               name: http
           env:
             - name: SPRING_PROFILES_ACTIVE
@@ -59,11 +59,6 @@ spec:
                 secretKeyRef:
                   name: postgres-credentials
                   key: POSTGRES_PASSWORD
-            - name: CAREFLOW_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: careflow-app-secrets
-                  key: CAREFLOW_JWT_SECRET
             - name: CAREFLOW_INTERNAL_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -72,7 +67,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 8081
+              port: 8083
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -80,7 +75,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8081
+              port: 8083
             initialDelaySeconds: 90
             periodSeconds: 15
             timeoutSeconds: 5
