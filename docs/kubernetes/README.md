@@ -31,7 +31,7 @@ scripts/
 |------|--------|-----------|
 | 3.0 | ✅ | Kind cluster + scripts |
 | 3.1 | ✅ | Namespace, Postgres, RabbitMQ |
-| 3.2 | Pendiente | auth-service (primer microservicio) |
+| 3.2 | ✅ | auth-service (primer microservicio) |
 | 3.3 | Pendiente | Resto de microservicios + gateway |
 | 3.4 | Pendiente | Frontend + Ingress (http://localhost:8088) |
 

@@ -151,5 +151,15 @@ kubectl rollout restart -n careflow deploy/postgres
 
 Desplegar `auth-service` como primer microservicio:
 
-- `kind load docker-image careflow/auth-service:0.0.1-SNAPSHOT`
-- Manifests en `infra/kubernetes/apps/auth-service/`
+```powershell
+.\scripts\kind-deploy-auth.ps1
+```
+
+Verifica con port-forward:
+
+```powershell
+kubectl port-forward -n careflow svc/auth-service 8081:8081
+curl http://localhost:8081/actuator/health
+```
+
+## Siguiente fase (3.3)
