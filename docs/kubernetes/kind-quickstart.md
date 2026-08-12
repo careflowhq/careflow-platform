@@ -1,6 +1,6 @@
-# Kind — inicio rápido (Sprint 3.0 + 3.1)
+# Kind — inicio rápido (Sprint 3.0 – 3.4)
 
-Guía para levantar **infraestructura CareFlow** en Kubernetes local con [Kind](https://kind.sigs.k8s.io/).
+Guía para levantar **CareFlow completo** en Kubernetes local con [Kind](https://kind.sigs.k8s.io/).
 
 ## Requisitos
 
@@ -55,9 +55,10 @@ chmod +x scripts/kind-*.sh
 
 1. Crea cluster Kind `careflow-local` (si no existe)
 2. Configura contexto kubectl `kind-careflow-local`
-3. Despliega namespace `careflow`
-4. Despliega **Postgres** (5 bases vía init script) y **RabbitMQ**
-5. Espera pods `Ready`
+3. Instala **ingress-nginx** (controlador Ingress para Kind)
+4. Despliega namespace `careflow`
+5. Despliega **Postgres** (5 bases vía init script) y **RabbitMQ**
+6. Espera pods `Ready`
 
 ### Salida esperada
 
@@ -98,14 +99,54 @@ Solo para desarrollo local. **No usar en Hetzner/AKS.**
 
 ## Puertos del host
 
-Configurados en `infra/kind/careflow-kind.yaml` para Ingress futuro (Sprint 3.4):
+Configurados en `infra/kind/careflow-kind.yaml`:
 
-| Host | Uso futuro |
-|------|------------|
-| `8088` | HTTP (Ingress) |
-| `8443` | HTTPS (Ingress) |
+| Host | Uso |
+|------|-----|
+| `8088` | HTTP — Ingress (frontend + API) |
+| `8443` | HTTPS (futuro) |
 
-En Fase 3.1 no hay Ingress; Postgres y RabbitMQ son **solo internos** al cluster.
+Postgres y RabbitMQ son **solo internos** al cluster.
+
+## Despliegue completo (recomendado)
+
+Desde la raíz del repo, con cluster ya creado (`kind-up`):
+
+```powershell
+.\scripts\kind-deploy-all.ps1
+```
+
+Linux / Git Bash:
+
+```bash
+./scripts/kind-deploy-all.sh
+```
+
+Abre en el navegador: **http://localhost:8088**
+
+### Rutas Ingress
+
+| Ruta | Destino |
+|------|---------|
+| `/api/*` | `api-gateway:8080` |
+| `/*` | `frontend:3000` |
+
+Mismo criterio que nginx en Docker Compose staging.
+
+### Verificar API vía Ingress
+
+```powershell
+curl.exe http://localhost:8088/api/auth/login
+# POST con body JSON — ver ejemplos en sección de pruebas 3.3
+```
+
+### Verificar frontend
+
+```powershell
+curl.exe -I http://localhost:8088/
+```
+
+Debe responder `HTTP/1.1 200` (o `307` a login).
 
 ## Destruir el cluster
 
@@ -177,11 +218,42 @@ Orden de arranque (init containers + waits):
 
 Secret compartido: `infra/kubernetes/apps/secrets.yaml` (`careflow-app-secrets`).
 
-Verifica con port-forward:
+Verifica con port-forward (alternativa sin Ingress):
 
 ```powershell
 kubectl port-forward -n careflow svc/api-gateway 8080:8080
 curl http://localhost:8080/actuator/health
 ```
 
-## Siguiente fase (3.4)
+## Fase 3.4 — frontend + Ingress
+
+Incluido en `kind-deploy-all.ps1`:
+
+1. `frontend` (Next.js standalone, puerto 3000)
+2. Reglas Ingress en `infra/kubernetes/apps/ingress.yaml`
+3. Entrada única: **http://localhost:8088**
+
+Solo frontend + ingress (cluster y backend ya desplegados):
+
+```powershell
+.\scripts\kind-install-ingress.ps1
+docker compose -f infra/docker/docker-compose.build.yml build frontend
+kind load docker-image careflow/frontend:0.0.1-SNAPSHOT --name careflow-local
+kubectl apply -k infra/kubernetes/apps
+```
+
+## Pruebas funcionales (PowerShell)
+
+Terminal con port-forward **no necesaria** si usas Ingress en `:8088`.
+
+```powershell
+# Health del gateway (vía port-forward opcional)
+curl.exe http://localhost:8088/
+
+# Login
+$loginBody = @{ email = "admin@test.local"; password = "Test1234!" } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8088/api/auth/login" `
+  -Method POST -ContentType "application/json" -Body $loginBody
+```
+
+> `409` en register = email ya existe. `201` sin body = registro OK.

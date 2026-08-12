@@ -35,7 +35,7 @@ function Test-ClusterExists {
     return ($clusters -contains $ClusterName)
 }
 
-Write-Host "==> CareFlow Kind - Fase 3.0 + 3.1" -ForegroundColor Cyan
+Write-Host "==> CareFlow Kind - Fase 3.0 + 3.1 + 3.4 (ingress)" -ForegroundColor Cyan
 
 Test-DockerRunning
 
@@ -49,6 +49,10 @@ if (Test-ClusterExists) {
 
 kubectl cluster-info --context "kind-$ClusterName" | Out-Null
 kubectl config use-context "kind-$ClusterName" | Out-Null
+
+Write-Host "==> Installing ingress-nginx for Kind..." -ForegroundColor Green
+& (Join-Path $PSScriptRoot "kind-install-ingress.ps1")
+if ($LASTEXITCODE -ne 0) { throw "ingress-nginx install failed" }
 
 Write-Host "==> Deploying namespace + postgres + rabbitmq..." -ForegroundColor Green
 kubectl apply -k $K8sBase
@@ -73,6 +77,7 @@ Write-Host ""
 kubectl get pods -n careflow
 Write-Host ""
 Write-Host "Useful commands:" -ForegroundColor DarkGray
+Write-Host "  .\scripts\kind-deploy-all.ps1   # full stack (backend + frontend + ingress rules)"
 Write-Host "  kubectl get all -n careflow"
 Write-Host "  k9s -n careflow"
 Write-Host "  .\scripts\kind-down.ps1   # delete cluster"

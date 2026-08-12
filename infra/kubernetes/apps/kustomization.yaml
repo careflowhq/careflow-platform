@@ -11,3 +11,5 @@ resources:
   - followup-service
   - notification-service
   - api-gateway
+  - frontend
+  - ingress.yaml

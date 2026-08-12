@@ -28,12 +28,16 @@ infra/
       followup-service/
       notification-service/
       api-gateway/
+      frontend/
+      ingress.yaml
       kustomization.yaml
 scripts/
-  kind-up.ps1 / kind-up.sh      # Crear cluster + desplegar infra
+  kind-up.ps1 / kind-up.sh      # Crear cluster + infra + ingress-nginx
   kind-down.ps1 / kind-down.sh  # Eliminar cluster
+  kind-install-ingress.ps1/.sh  # Solo ingress-nginx controller
   kind-deploy-auth.ps1/.sh      # Solo auth-service (3.2)
   kind-deploy-apps.ps1/.sh      # Backend completo (3.3)
+  kind-deploy-all.ps1/.sh       # Stack completo (3.4)
 ```
 
 ## Sprint 3 — progreso
@@ -44,7 +48,7 @@ scripts/
 | 3.1 | ✅ | Namespace, Postgres, RabbitMQ |
 | 3.2 | ✅ | auth-service (primer microservicio) |
 | 3.3 | ✅ | Resto de microservicios + api-gateway |
-| 3.4 | Pendiente | Frontend + Ingress (http://localhost:8088) |
+| 3.4 | ✅ | Frontend + Ingress (http://localhost:8088) |
 
 ## Servicios DNS internos (namespace `careflow`)
 
@@ -58,6 +62,7 @@ scripts/
 | `followup-service` | 8084 | Seguimientos |
 | `notification-service` | 8085 | Notificaciones |
 | `api-gateway` | 8080 | Entrada HTTP `/api/*` |
+| `frontend` | 3000 | UI Next.js |
 
 Estos nombres coinciden con `application-docker.yml` para facilitar el despliegue de apps en fases siguientes.
 

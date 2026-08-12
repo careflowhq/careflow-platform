@@ -9,7 +9,7 @@ KIND_CONFIG="$ROOT/infra/kind/careflow-kind.yaml"
 K8S_BASE="$ROOT/infra/kubernetes/base"
 CLUSTER_NAME="careflow-local"
 
-echo "==> CareFlow Kind — Fase 3.0 + 3.1"
+echo "==> CareFlow Kind — Fase 3.0 + 3.1 + 3.4 (ingress)"
 
 if ! docker info >/dev/null 2>&1; then
   echo "!! Docker is not running. Start Docker Desktop and retry."
@@ -24,6 +24,8 @@ else
 fi
 
 kubectl config use-context "kind-$CLUSTER_NAME"
+
+"$ROOT/scripts/kind-install-ingress.sh"
 
 echo "==> Deploying namespace + postgres + rabbitmq..."
 kubectl apply -k "$K8S_BASE"

@@ -1,0 +1,29 @@
+# Routes match staging nginx: /api -> gateway, / -> frontend
+# Access via http://localhost:8088 (Kind hostPort mapping in careflow-kind.yaml)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: careflow
+  labels:
+    app.kubernetes.io/part-of: careflow-platform
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
